@@ -1,0 +1,32 @@
+{
+  "name": "back_schoolmanager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rfmotaa/SchoolManager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rfmotaa/SchoolManager/issues"
+  },
+  "homepage": "https://github.com/rfmotaa/SchoolManager#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
