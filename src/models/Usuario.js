@@ -38,8 +38,8 @@ const Usuario = sequelize.define('Usuario', {
         defaultValue: true
     },
     data_cadastro: {
-            type: DataTypes.DATE,
-            allowNull: false
+        type: DataTypes.DATE,
+        defaultValue: Date.now()
     }
 }, {
     tableName: 'usuarios',
