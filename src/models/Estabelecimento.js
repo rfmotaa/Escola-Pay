@@ -13,8 +13,9 @@ const Estabelecimento = sequelize.define("Estabelecimento", {
         allowNull: false
     },
     cnpj: {
-        type: DataTypes.BIGINT,
-        allowNull: false
+        type: DataTypes.STRING(18),
+        allowNull: false,
+        unique: true
     },
     data_adesao: {
             type: DataTypes.DATE,
