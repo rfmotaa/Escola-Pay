@@ -1,4 +1,5 @@
 import Estabelecimento from "../models/Estabelecimento.js";
+import UsuarioEstabelecimento from "../models/UsuarioEstabelecimento.js";
 
 class EstabelecimentoController{
 
@@ -15,8 +16,26 @@ class EstabelecimentoController{
     static async cadastrarEstabelecimento (req, res){
         try{
             const body = req.body;
+            
+            // Validação
+            if (!body.id_criador || !body.nome) {
+                return res.status(400).json({message: `ID do usuário criador e nome são obrigatórios`});
+            }
+
+            // Cria o estabelecimento
             const novoEstabelecimento = await Estabelecimento.create(body);
-            res.status(200).json({ message:"estabelecimento criado com sucesso", estabelecimento: novoEstabelecimento});
+            
+            // Vincula o usuário criador como proprietário
+            await UsuarioEstabelecimento.create({
+                id_usuario: body.id_criador,
+                id_estabelecimento: novoEstabelecimento.id_estabelecimento,
+                papel: 'proprietario'
+            });
+
+            res.status(201).json({ 
+                message: "Estabelecimento criado com sucesso! Você já pode gerenciar mensalidades e compras.", 
+                estabelecimento: novoEstabelecimento
+            });
         }
         catch(erro){
             res.status(500).json({message: `${erro.message} - falha ao cadastrar estabelecimento`});
@@ -78,6 +97,32 @@ class EstabelecimentoController{
         }
         catch(erro){
             res.status(500).json({message: `${erro.message} - falha ao deletar estabelecimento`});
+        }
+    }
+
+    // Listar estabelecimentos de um usuário específico
+    static async listarEstabelecimentosDoUsuario (req, res) {
+        try{
+            const { idUsuario } = req.params;
+            
+            const vinculos = await UsuarioEstabelecimento.findAll({
+                where: { id_usuario: idUsuario },
+                include: [{
+                    model: Estabelecimento,
+                    as: 'estabelecimento'
+                }]
+            });
+
+            const estabelecimentos = vinculos.map(v => ({
+                ...v.estabelecimento.toJSON(),
+                papel: v.papel,
+                data_vinculo: v.data_vinculo
+            }));
+
+            res.status(200).json(estabelecimentos);
+        }
+        catch(erro){
+            res.status(500).json({message: `${erro.message} - falha ao listar estabelecimentos do usuário`});
         }
     }
 }

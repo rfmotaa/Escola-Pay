@@ -15,7 +15,7 @@ const Compra = sequelize.define('Compra', {
             key: 'id_estabelecimento'
         }
     },
-    id_usuario: {
+    id_usuario_responsavel: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {

@@ -1,4 +1,5 @@
-//id_estabelecimento, nome, email, senha, ativo, data_cadastro
+// Usuário independente - se cadastra como no Gmail
+// Depois pode criar/gerenciar estabelecimentos
 
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
@@ -8,14 +9,6 @@ const Usuario = sequelize.define('Usuario', {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
-    },
-    id_estabelecimento: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'estabelecimentos',
-            key: 'id_estabelecimento'
-        }
     },
     nome: {
         type: DataTypes.STRING,
@@ -33,13 +26,17 @@ const Usuario = sequelize.define('Usuario', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    telefone: {
+        type: DataTypes.STRING(15),
+        allowNull: true
+    },
     ativo: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
     },
     data_cadastro: {
         type: DataTypes.DATE,
-        defaultValue: Date.now()
+        defaultValue: DataTypes.NOW
     }
 }, {
     tableName: 'usuarios',

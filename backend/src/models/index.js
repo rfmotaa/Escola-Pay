@@ -1,25 +1,45 @@
 import Estabelecimento from "./Estabelecimento.js";
 import Usuario from "./Usuario.js";
+import UsuarioEstabelecimento from "./UsuarioEstabelecimento.js";
 import Pagador from "./Pagador.js";
 import Mensalidade from "./Mensalidade.js";
 import Compra from "./Compra.js";
 import ItemCompra from "./ItemCompra.js";
 
 // ==========================================
-// RELACIONAMENTOS COM ESTABELECIMENTO (Tenant)
+// RELACIONAMENTO USUARIO <-> ESTABELECIMENTO
 // ==========================================
 
-// Um Estabelecimento tem muitos Usuários
-Estabelecimento.hasMany(Usuario, {
+// Um Usuário pode criar vários Estabelecimentos
+Usuario.hasMany(Estabelecimento, {
+    foreignKey: 'id_criador',
+    as: 'estabelecimentosCriados'
+});
+
+// Um Estabelecimento tem um criador
+Estabelecimento.belongsTo(Usuario, {
+    foreignKey: 'id_criador',
+    as: 'criador'
+});
+
+// Relacionamento Muitos-para-Muitos (usuário pode gerenciar vários estabelecimentos)
+Usuario.belongsToMany(Estabelecimento, {
+    through: UsuarioEstabelecimento,
+    foreignKey: 'id_usuario',
+    otherKey: 'id_estabelecimento',
+    as: 'estabelecimentos'
+});
+
+Estabelecimento.belongsToMany(Usuario, {
+    through: UsuarioEstabelecimento,
     foreignKey: 'id_estabelecimento',
+    otherKey: 'id_usuario',
     as: 'usuarios'
 });
 
-// Um Usuário pertence a um Estabelecimento
-Usuario.belongsTo(Estabelecimento, {
-    foreignKey: 'id_estabelecimento',
-    as: 'estabelecimento'
-});
+// ==========================================
+// RELACIONAMENTOS COM ESTABELECIMENTO (Tenant)
+// ==========================================
 
 // Um Estabelecimento tem muitos Pagadores
 Estabelecimento.hasMany(Pagador, {
@@ -73,16 +93,16 @@ Mensalidade.belongsTo(Pagador, {
     as: 'pagador'
 });
 
-// Um Usuário tem muitas Compras
-Usuario.hasMany(Compra, {
-    foreignKey: 'id_usuario',
-    as: 'compras'
+// Uma Compra tem um responsável (usuário que fez a compra)
+// Agora vinculado através da tabela intermediária
+Compra.belongsTo(Usuario, {
+    foreignKey: 'id_usuario_responsavel',
+    as: 'responsavel'
 });
 
-// Uma Compra pertence a um Usuário
-Compra.belongsTo(Usuario, {
-    foreignKey: 'id_usuario',
-    as: 'usuario'
+Usuario.hasMany(Compra, {
+    foreignKey: 'id_usuario_responsavel',
+    as: 'comprasRealizadas'
 });
 
 // Uma Compra tem muitos Itens
@@ -104,6 +124,7 @@ ItemCompra.belongsTo(Compra, {
 export {
     Estabelecimento,
     Usuario,
+    UsuarioEstabelecimento,
     Pagador,
     Mensalidade,
     Compra,

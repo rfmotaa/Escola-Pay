@@ -17,13 +17,30 @@ class UsuarioController{
     static async cadastrarUsuario (req, res){
         try{
             const body = req.body;
-            if (!validate(body))
-                res.status(401).json({message: `Informações incorretas no body`});
+            // Validação básica
+            if (!body.nome || !body.email || !body.senha) {
+                return res.status(400).json({message: `Nome, email e senha são obrigatórios`});
+            }
 
+            // Criptografa a senha
             body.senha = CryptoManager.generateHash(body.senha);
 
             const novoUsuario = await Usuario.create(body);
-            res.status(200).json({ message:"usuario criado com sucesso", usuario: novoUsuario});
+            
+            // Remove a senha da resposta
+            const usuarioResposta = {
+                id_usuario: novoUsuario.id_usuario,
+                nome: novoUsuario.nome,
+                email: novoUsuario.email,
+                telefone: novoUsuario.telefone,
+                ativo: novoUsuario.ativo,
+                data_cadastro: novoUsuario.data_cadastro
+            };
+
+            res.status(201).json({ 
+                message: "Usuário criado com sucesso! Agora você pode criar seu estabelecimento.", 
+                usuario: usuarioResposta
+            });
         }
         catch(erro){
             res.status(500).json({message: `${erro.message} - falha ao cadastrar usuario`});
