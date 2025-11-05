@@ -3,6 +3,7 @@ import Usuario from "./Usuario.js";
 import Pagador from "./Pagador.js";
 import Mensalidade from "./Mensalidade.js";
 import Compra from "./Compra.js";
+import ItemCompra from "./ItemCompra.js";
 
 // ==========================================
 // RELACIONAMENTOS COM ESTABELECIMENTO (Tenant)
@@ -84,6 +85,18 @@ Compra.belongsTo(Usuario, {
     as: 'usuario'
 });
 
+// Uma Compra tem muitos Itens
+Compra.hasMany(ItemCompra, {
+    foreignKey: 'id_compra',
+    as: 'itens'
+});
+
+// Um Item pertence a uma Compra
+ItemCompra.belongsTo(Compra, {
+    foreignKey: 'id_compra',
+    as: 'compra'
+});
+
 // ==========================================
 // EXPORTAR TODOS OS MODELS
 // ==========================================
@@ -93,5 +106,6 @@ export {
     Usuario,
     Pagador,
     Mensalidade,
-    Compra
+    Compra,
+    ItemCompra
 };
