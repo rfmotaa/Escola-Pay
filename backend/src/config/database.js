@@ -16,8 +16,7 @@ async function conectarBanco() {
         await sequelize.authenticate();
         console.log('✅ Conexão com SQLite estabelecida!');
         
-        // Sincroniza os models (cria as tabelas)
-        await sequelize.sync({ alter: true });
+        await sequelize.sync({ force: true });
         console.log('✅ Tabelas sincronizadas!');
         
         return sequelize;

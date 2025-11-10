@@ -5,9 +5,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'API da QuickQueue',
+      title: 'API da School Manager',
       version: '1.0.0',
-      description: 'Documentação da API para o sistema de gerenciamento de cantinas escolares (Quick Queue).',
+      description: 'Documentação da API para o sistema de gerenciamento de finanças escolares.',
     },
     servers: [
       {
