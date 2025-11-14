@@ -1,9 +1,10 @@
-import Card from './components/Card'
+import Home from "./pages/Home"
+import Dashboard from "./pages/Dashboard"
 
 function App() {
   return (
     <>
-      <Card/>
+      <Dashboard />
     </>
   )
 }
