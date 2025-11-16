@@ -12,7 +12,7 @@ export function HeroSection() {
           {/* Logo e Título */}
           <div className="space-y-6">
             <div className="flex items-center justify-center gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col md:flex-row items-center gap-3">
                 <h1 className="text-white text-5xl md:text-6xl">Gerencie com</h1>
                 <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-3 rounded-xl">
                   <GraduationCap className="h-10 w-10 md:h-12 md:w-12 text-white" />
@@ -29,17 +29,17 @@ export function HeroSection() {
           </div>
 
           {/* Input falso que abre o modal */}
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto text-[14px] md:text-[16px]">
             <div 
               onClick={() => navigate('/cadastro')}
-              className="relative bg-slate-900/80 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 cursor-pointer hover:border-orange-500/50 transition-all duration-300"
+              className="relative bg-slate-900/80 backdrop-blur-sm border border-slate-700 rounded-2xl p-3 md:p-6 cursor-pointer hover:border-orange-500/50 transition-all duration-300"
             >
               <p className="text-slate-400 text-left">
                 Cadastre sua instituição escolar para começar...
               </p>
               <Button
                 onClick={() => navigate('/cadastro')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full h-10 w-10 p-0"
+                className="absolute right-1 md:right-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full h-10 w-10 p-0"
               >
                 <ArrowRight className="h-5 w-5" />
               </Button>
