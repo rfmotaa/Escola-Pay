@@ -37,7 +37,7 @@ export class CryptoManager {
     }
 }
 
-export const verifySalt = () => {
+export const verifySalt = async () => {
     if (!saltValue)
-        CryptoManager.generateSalt();
+        await CryptoManager.generateSalt();
 }
