@@ -6,7 +6,7 @@ Criar um sistema para gerenciamento de escolas que:
 - Resolva problemas de organização
 - Implemente as regras de negócio
 
-<h1 align="center">🏫 SchoolManager</h1>
+<h1 align="center">🏫 EscolaPay</h1>
 
 <div align="center">
   <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" />
@@ -20,31 +20,109 @@ Criar um sistema para gerenciamento de escolas que:
 
 ## 💻 Como rodar
 
-### 📥 1. Clone este repositório e navegue até a pasta do projeto
-Abra o terminal e execute o comando abaixo para clonar o repositório:
-```
+### 📥 1. Clone este repositório
+Abra o terminal e execute:
+```bash
 git clone https://github.com/rfmotaa/SchoolManager.git
-cd schoolmanager
+cd EscolaPay
 ```
 
-### 📂 2. Instale as dependências de ambas as partes
+### ⚙️ 2. Configure as variáveis de ambiente
 
-> 2 Terminais são recomendados aqui
-
-```
+**Backend:**
+```bash
 cd backend
+cp .env.example .env
+```
+
+Abra o arquivo `.env` e ajuste as variáveis se necessário. As configurações padrão já funcionam.
+
+### 📦 3. Instale as dependências do Backend
+
+```bash
 npm install
+```
+
+### 🚀 4. Inicie o servidor backend
+
+```bash
 node server.js
 ```
-O terminal mostrará uma mensagem informando que o servidor está no ar.
 
-### 🧠 3. Abra outro terminal, navegue até a pasta do frontend e instale as dependências do frontend
-```
+✅ O servidor estará rodando em `http://localhost:3000`
+📚 Documentação da API: `http://localhost:3000/api-docs`
+
+### 🎨 5. Configure e inicie o Frontend
+
+**Abra um novo terminal** e execute:
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
-O projeto será iniciado em http://localhost:5173/ por padrão. Acesse no navegador.
+
+✅ O frontend estará rodando em `http://localhost:5173`
+
+### 🎯 6. Acesse o sistema
+
+Abra seu navegador em `http://localhost:5173`
+
+**Fluxo inicial:**
+1. Clique em "Criar Conta"
+2. Preencha seus dados e cadastre-se
+3. Faça login com seu email e senha
+4. Configure seu estabelecimento no onboarding
+5. Comece a usar o sistema! 🎉
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+**Backend:**
+- Node.js + Express
+- SQLite (banco de dados)
+- JWT (autenticação)
+- Sequelize (ORM)
+- Swagger (documentação)
+
+**Frontend:**
+- React + Vite
+- TailwindCSS
+- shadcn/ui
+- React Router
+- Axios
+
+---
+
+## 📝 Variáveis de Ambiente
+
+O arquivo `.env.example` contém todas as variáveis necessárias:
+
+```env
+SALT_ROUNDS=10
+SALT_VALUE=$2b$10$abcdefghijklmnopqrstuv
+PORT=3000
+JWT_SECRET=escolapay_super_secret_key_change_in_production_2025
+JWT_EXPIRES_IN=7d
+```
+
+⚠️ **Importante:** Nunca commite o arquivo `.env` no Git. Ele está no `.gitignore`.
+
+---
+
+## 🔧 Troubleshooting
+
+**Erro: "secretOrPrivateKey must have a value"**
+- ✅ Certifique-se de ter criado o arquivo `.env` a partir do `.env.example`
+- ✅ Reinicie o servidor backend
+
+**Erro: "EADDRINUSE :::3000"**
+- ✅ A porta 3000 já está em uso. Feche outros processos ou altere a `PORT` no `.env`
+
+**Banco de dados vazio após clonar**
+- ✅ Normal! O banco é criado automaticamente ao iniciar o backend
+- ✅ Cadastre um usuário pelo frontend
 
 
 ## 📫 Contato
