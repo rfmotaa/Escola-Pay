@@ -23,17 +23,18 @@ const Compra = sequelize.define('Compra', {
             key: 'id_usuario'
         }
     },
-    item: {
-        type: DataTypes.TEXT,
-        allowNull: true
-    },
-    valor_unitario: {
-        type: DataTypes.DECIMAL(10, 2),
+    nome_compra: {
+        type: DataTypes.STRING,
         allowNull: false
+    },
+    categoria: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     valor_total: {
         type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
+        allowNull: false,
+        defaultValue: 0
     },
     data_compra: {
         type: DataTypes.DATE,

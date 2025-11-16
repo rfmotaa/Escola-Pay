@@ -1,169 +1,278 @@
-import { Bill } from "./BillCard";
-import { Purchase } from "./PurchaseCard";
-import { Card } from "./dashboard.ui/card";
-import { Wallet, Receipt, TrendingDown, DollarSign, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "./dashboard.ui/card";
+import { Button } from "./dashboard.ui/button";
+import { Users, AlertCircle, DollarSign, ShoppingCart, TrendingDown, Building, Plus, ArrowRight } from "lucide-react";
+import { mensalidadeService } from "../services/mensalidade.service";
+import { compraService } from "../services/compra.service";
+import { pagadorService } from "../services/pagador.service";
+import { authService } from "../services/auth.service";
 
-interface DashboardViewProps {
-  bills: Bill[];
-  purchases: Purchase[];
-  selectedDate: Date;
-}
+export function DashboardView() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalPagadores: 0,
+    mensalidadesPendentesMes: 0,
+    totalReceberMes: 0,
+    comprasMes: 0,
+    gastoTotalMes: 0,
+    estabelecimentoNome: "",
+  });
 
-export function DashboardView({ bills, purchases, selectedDate }: DashboardViewProps) {
-  const totalBills = bills.reduce((sum, bill) => sum + bill.amount, 0);
-  const totalPurchases = purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
-  const pendingBills = bills.filter((bill) => bill.status === "pending").length;
-  const overdueBills = bills.filter((bill) => bill.status === "overdue").length;
-  const totalExpenses = totalBills + totalPurchases;
+  const estabelecimento = authService.getEstabelecimento();
+  const usuario = authService.getUsuarioLogado();
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    try {
+      setLoading(true);
+
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const [mensalidadesData, comprasData, pagadoresData] = await Promise.all([
+        mensalidadeService.listar(),
+        compraService.listar(),
+        pagadorService.listar(),
+      ]);
+
+      const mensalidadesDoMes = mensalidadesData.filter((m: any) => {
+        const date = new Date(m.data_vencimento);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      });
+
+      const comprasDoMes = comprasData.filter((c: any) => {
+        const date = new Date(c.data_compra);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      });
+
+      const pagadoresDoEstabelecimento = pagadoresData.filter(
+        (p: any) => p.id_estabelecimento === estabelecimento?.id_estabelecimento
+      );
+
+      const mensalidadesPendentes = mensalidadesDoMes.filter(
+        (m: any) => m.status === "pendente" || m.status === "atrasada"
+      );
+
+      const totalReceber = mensalidadesPendentes.reduce(
+        (sum: number, m: any) => sum + parseFloat(m.valor || 0),
+        0
+      );
+
+      const gastoTotal = comprasDoMes.reduce(
+        (sum: number, c: any) => sum + parseFloat(c.valor_total || 0),
+        0
+      );
+
+      setStats({
+        totalPagadores: pagadoresDoEstabelecimento.length,
+        mensalidadesPendentesMes: mensalidadesPendentes.length,
+        totalReceberMes: totalReceber,
+        comprasMes: comprasDoMes.length,
+        gastoTotalMes: gastoTotal,
+        estabelecimentoNome: estabelecimento?.nome || "Meu Estabelecimento",
+      });
+    } catch (err) {
+      console.error("Erro ao carregar dados:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const monthNames = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
-  const recentBills = bills
-    .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime())
-    .slice(0, 3);
+  const currentDate = new Date();
 
-  const recentPurchases = purchases
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 3);
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="text-slate-400 mt-4">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2>Visão Geral</h2>
-        <p className="text-muted-foreground mt-1">
-          Resumo financeiro de {monthNames[selectedDate.getMonth()]} {selectedDate.getFullYear()}
+        <h2 className="text-white text-2xl font-semibold">Visão Geral</h2>
+        <p className="text-slate-400 mt-1">
+          Resumo financeiro de {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-5 bg-gradient-to-br from-primary to-orange-600 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <p>Total de Gastos</p>
-          </div>
-          <p className="mb-1">${totalExpenses.toFixed(2)}</p>
-          <p className="opacity-90">Este mês</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400">
+              Total de Pagadores
+            </CardTitle>
+            <Users className="h-4 w-4 text-slate-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{stats.totalPagadores}</div>
+            <p className="text-xs text-slate-500 mt-1">Cadastrados no sistema</p>
+          </CardContent>
         </Card>
 
-        <Card className="p-5 bg-gradient-to-br from-amber-500 to-orange-500 text-white border-amber-500/20">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Receipt className="w-5 h-5" />
-            </div>
-            <p>Contas</p>
-          </div>
-          <p className="mb-1">${totalBills.toFixed(2)}</p>
-          <p className="opacity-90">{bills.length} contas</p>
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400">
+              Mensalidades Pendentes
+            </CardTitle>
+            <AlertCircle className="h-4 w-4 text-amber-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-400">{stats.mensalidadesPendentesMes}</div>
+            <p className="text-xs text-slate-500 mt-1">Este mês</p>
+          </CardContent>
         </Card>
 
-        <Card className="p-5 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-emerald-500/20">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Wallet className="w-5 h-5" />
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400">
+              Total a Receber
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-emerald-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-400">
+              R$ {stats.totalReceberMes.toFixed(2)}
             </div>
-            <p>Compras</p>
-          </div>
-          <p className="mb-1">${totalPurchases.toFixed(2)}</p>
-          <p className="opacity-90">{purchases.length} compras</p>
-        </Card>
-
-        <Card className="p-5 bg-gradient-to-br from-red-500 to-rose-600 text-white border-red-500/20">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <TrendingDown className="w-5 h-5" />
-            </div>
-            <p>Alertas</p>
-          </div>
-          <p className="mb-1">{pendingBills + overdueBills}</p>
-          <p className="opacity-90">Ações pendentes</p>
+            <p className="text-xs text-slate-500 mt-1">Este mês</p>
+          </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6 bg-card border-border">
-          <div className="flex items-center justify-between mb-4">
-            <h3>Contas Recentes</h3>
-            <Receipt className="w-5 h-5 text-muted-foreground" />
-          </div>
-          {recentBills.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Nenhuma conta neste mês</p>
-          ) : (
-            <div className="space-y-3">
-              {recentBills.map((bill) => (
-                <div key={bill.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                  <div>
-                    <p className="text-foreground">{bill.name}</p>
-                    <p className="text-muted-foreground">{bill.payer}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-foreground">${bill.amount.toFixed(2)}</p>
-                    <p className={`${
-                      bill.status === "paid" ? "text-emerald-400" :
-                      bill.status === "overdue" ? "text-red-400" :
-                      "text-amber-400"
-                    }`}>
-                      {bill.status === "paid" ? "Pago" :
-                       bill.status === "overdue" ? "Atrasado" :
-                       "Pendente"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400">
+              Compras Realizadas
+            </CardTitle>
+            <ShoppingCart className="h-4 w-4 text-slate-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{stats.comprasMes}</div>
+            <p className="text-xs text-slate-500 mt-1">Este mês</p>
+          </CardContent>
         </Card>
 
-        <Card className="p-6 bg-card border-border">
-          <div className="flex items-center justify-between mb-4">
-            <h3>Compras Recentes</h3>
-            <Wallet className="w-5 h-5 text-muted-foreground" />
-          </div>
-          {recentPurchases.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Nenhuma compra neste mês</p>
-          ) : (
-            <div className="space-y-3">
-              {recentPurchases.map((purchase) => (
-                <div key={purchase.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                  <div>
-                    <p className="text-foreground">{purchase.name}</p>
-                    <p className="text-muted-foreground capitalize">{purchase.category}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-foreground">${purchase.amount.toFixed(2)}</p>
-                    <p className="text-muted-foreground">
-                      {new Date(purchase.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400">
+              Gasto Total
+            </CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-400">
+              R$ {stats.gastoTotalMes.toFixed(2)}
             </div>
-          )}
+            <p className="text-xs text-slate-500 mt-1">Este mês</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-white">
+              Estabelecimento
+            </CardTitle>
+            <Building className="h-4 w-4 text-white" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold text-white truncate">
+              {stats.estabelecimentoNome}
+            </div>
+            <p className="text-xs text-orange-100 mt-1">{usuario?.nome}</p>
+          </CardContent>
         </Card>
       </div>
 
-      {(pendingBills > 0 || overdueBills > 0) && (
-        <Card className="p-6 bg-amber-500/10 border-amber-500/20">
-          <div className="flex items-start gap-3">
-            <Calendar className="w-6 h-6 text-amber-400 mt-1" />
-            <div>
-              <h3 className="text-foreground mb-2">Atenção Necessária</h3>
-              {overdueBills > 0 && (
-                <p className="text-amber-300 mb-1">
-                  • {overdueBills} conta(s) atrasada(s)
-                </p>
-              )}
-              {pendingBills > 0 && (
+      <div>
+        <h3 className="text-white text-lg font-semibold mb-4">Ações Rápidas</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card 
+            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group"
+            onClick={() => navigate("/dashboard/mensalidades")}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-orange-500/20 rounded-lg group-hover:bg-orange-500/30 transition-all">
+                  <DollarSign className="h-6 w-6 text-orange-400" />
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-orange-400 transition-all" />
+              </div>
+              <h4 className="text-white font-semibold mb-1">Nova Mensalidade</h4>
+              <p className="text-slate-400 text-sm">Cadastrar pagamento recorrente</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group"
+            onClick={() => navigate("/dashboard/pagadores")}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-orange-500/20 rounded-lg group-hover:bg-orange-500/30 transition-all">
+                  <Users className="h-6 w-6 text-orange-400" />
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-orange-400 transition-all" />
+              </div>
+              <h4 className="text-white font-semibold mb-1">Novo Pagador</h4>
+              <p className="text-slate-400 text-sm">Cadastrar pessoa responsável</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group"
+            onClick={() => navigate("/dashboard/compras")}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-orange-500/20 rounded-lg group-hover:bg-orange-500/30 transition-all">
+                  <ShoppingCart className="h-6 w-6 text-orange-400" />
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-orange-400 transition-all" />
+              </div>
+              <h4 className="text-white font-semibold mb-1">Registrar Compra</h4>
+              <p className="text-slate-400 text-sm">Adicionar nova despesa</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {stats.mensalidadesPendentesMes > 0 && (
+        <Card className="bg-amber-500/10 border-amber-500/30 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-amber-400 mt-1 flex-shrink-0" />
+              <div>
+                <h3 className="text-white font-semibold mb-2">Atenção Necessária</h3>
                 <p className="text-amber-300">
-                  • {pendingBills} conta(s) pendente(s) para pagar
+                  Você tem {stats.mensalidadesPendentesMes} mensalidade(s) pendente(s) este mês.
+                  Total a receber: <strong>R$ {stats.totalReceberMes.toFixed(2)}</strong>
                 </p>
-              )}
+                <Button
+                  onClick={() => navigate("/dashboard/mensalidades")}
+                  className="mt-4 bg-amber-600 hover:bg-amber-700 text-white"
+                  size="sm"
+                >
+                  Ver Mensalidades
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
+          </CardContent>
         </Card>
       )}
     </div>

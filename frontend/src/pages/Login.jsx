@@ -21,7 +21,14 @@ export default function Login() {
     
     try {
       await authService.login(email, senha);
-      navigate('/dashboard');
+      
+      const temEstabelecimento = authService.getTemEstabelecimento();
+      
+      if (temEstabelecimento) {
+        navigate('/dashboard');
+      } else {
+        navigate('/onboarding');
+      }
     } catch (err) {
       setErro(err.response?.data?.message || 'Erro ao fazer login');
     } finally {

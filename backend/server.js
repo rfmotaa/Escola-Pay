@@ -7,7 +7,8 @@ import routes from './src/routes/index.js'
 
 import { conectarBanco } from './src/config/database.js';
 import { verifySalt } from './src/config/crypto.js';
-import { popularBanco } from './src/config/seedDatabase.js'
+import { popularBanco } from './src/config/seedDatabase.js';
+import './src/models/index.js';
 
 dotenv.config();
 

@@ -37,6 +37,17 @@ Estabelecimento.belongsToMany(Usuario, {
     as: 'usuarios'
 });
 
+// Relacionamentos diretos da tabela intermediária
+UsuarioEstabelecimento.belongsTo(Estabelecimento, {
+    foreignKey: 'id_estabelecimento',
+    as: 'estabelecimento'
+});
+
+UsuarioEstabelecimento.belongsTo(Usuario, {
+    foreignKey: 'id_usuario',
+    as: 'usuario'
+});
+
 // ==========================================
 // RELACIONAMENTOS COM ESTABELECIMENTO (Tenant)
 // ==========================================

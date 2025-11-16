@@ -4,7 +4,9 @@ class ItemCompraController{
 
     static async listarItensCompra (req, res){
         try{
-            const listaItensCompra = await ItemCompra.findAll();
+            const { id_compra } = req.query;
+            const where = id_compra ? { id_compra } : {};
+            const listaItensCompra = await ItemCompra.findAll({ where });
             res.status(200).json(listaItensCompra);
         }
         catch(erro){

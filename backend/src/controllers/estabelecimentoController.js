@@ -17,15 +17,12 @@ class EstabelecimentoController{
         try{
             const body = req.body;
             
-            // Validação
             if (!body.id_criador || !body.nome) {
                 return res.status(400).json({message: `ID do usuário criador e nome são obrigatórios`});
             }
 
-            // Cria o estabelecimento
             const novoEstabelecimento = await Estabelecimento.create(body);
             
-            // Vincula o usuário criador como proprietário
             await UsuarioEstabelecimento.create({
                 id_usuario: body.id_criador,
                 id_estabelecimento: novoEstabelecimento.id_estabelecimento,
@@ -100,7 +97,6 @@ class EstabelecimentoController{
         }
     }
 
-    // Listar estabelecimentos de um usuário específico
     static async listarEstabelecimentosDoUsuario (req, res) {
         try{
             const { idUsuario } = req.params;
@@ -109,19 +105,23 @@ class EstabelecimentoController{
                 where: { id_usuario: idUsuario },
                 include: [{
                     model: Estabelecimento,
-                    as: 'estabelecimento'
+                    as: 'estabelecimento',
+                    required: false
                 }]
             });
 
-            const estabelecimentos = vinculos.map(v => ({
-                ...v.estabelecimento.toJSON(),
-                papel: v.papel,
-                data_vinculo: v.data_vinculo
-            }));
+            const estabelecimentos = vinculos
+                .filter(v => v.estabelecimento)
+                .map(v => ({
+                    ...v.estabelecimento.toJSON(),
+                    papel: v.papel,
+                    data_vinculo: v.data_vinculo
+                }));
 
             res.status(200).json(estabelecimentos);
         }
         catch(erro){
+            console.error("Erro ao listar estabelecimentos do usuário:", erro);
             res.status(500).json({message: `${erro.message} - falha ao listar estabelecimentos do usuário`});
         }
     }

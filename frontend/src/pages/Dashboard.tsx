@@ -1,107 +1,70 @@
 import '../styles/Dashboard.css';
 
-import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Bill } from "../components/BillCard";
-import { Purchase } from "../components/PurchaseCard";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { DashboardView } from "../components/DashboardView";
-import { BillsView } from "../components/BillsView";
-import { PurchasesView } from "../components/PurchasesView";
 import { Card } from "../components/dashboard.ui/card";
 import { Button } from "../components/dashboard.ui/button";
-import { LayoutDashboard, Receipt, ShoppingBag, ChevronLeft, ChevronRight, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, ChevronLeft, ChevronRight, LogOut, Loader2, Users, DollarSign, ShoppingCart, Building } from "lucide-react";
 import { authService } from "../services/auth.service";
-import { mensalidadeService } from "../services/mensalidade.service";
-import { compraService } from "../services/compra.service";
-
-type View = "dashboard" | "bills" | "purchases";
+import { estabelecimentoService } from "../services/estabelecimento.service";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const location = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState<View>("dashboard");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const [estabelecimento, setEstabelecimento] = useState<any>(null);
 
   const usuario = authService.getUsuarioLogado();
 
   useEffect(() => {
+    // Verificar se tem estabelecimento no localStorage antes de carregar dados
+    const estabelecimentoLS = authService.getEstabelecimento();
+    if (!estabelecimentoLS) {
+      navigate("/onboarding", { replace: true });
+      return;
+    }
     carregarDados();
-  }, []);
+  }, [navigate]);
 
   const carregarDados = async () => {
     try {
       setCarregando(true);
       setErro("");
 
-      const [mensalidadesData, comprasData] = await Promise.all([
-        mensalidadeService.listar(),
-        compraService.listar(),
-      ]);
+      // Buscar estabelecimento do usuário
+      const estabelecimentosData = await estabelecimentoService.listarDoUsuario(usuario?.id_usuario || 1);
+      
+      if (!estabelecimentosData || estabelecimentosData.length === 0) {
+        // Usar estabelecimento do localStorage se não encontrar no backend
+        const estabelecimentoLS = authService.getEstabelecimento();
+        if (estabelecimentoLS) {
+          setEstabelecimento(estabelecimentoLS);
+        } else {
+          setEstabelecimento(null);
+          setCarregando(false);
+          return;
+        }
+      } else {
+        const estabelecimentoAtual = estabelecimentosData[0];
+        setEstabelecimento(estabelecimentoAtual);
 
-      const billsFormatted: Bill[] = mensalidadesData.map((m: any) => ({
-        id: m.id_mensalidade.toString(),
-        name: m.descricao || "Mensalidade",
-        amount: parseFloat(m.valor),
-        payer: "Pagador",
-        dueDate: m.data_vencimento,
-        status: m.status === "pago" ? "paid" : m.status === "atrasado" ? "overdue" : "pending",
-      }));
+        // Atualizar localStorage com o estabelecimento
+        localStorage.setItem("estabelecimento", JSON.stringify(estabelecimentoAtual));
+        localStorage.setItem("temEstabelecimento", "true");
+      }
 
-      const purchasesFormatted: Purchase[] = comprasData.map((c: any) => ({
-        id: c.id_compra.toString(),
-        name: c.descricao || "Compra",
-        amount: parseFloat(c.valor_total),
-        category: "other",
-        date: c.data_compra,
-        description: c.descricao || "",
-      }));
-
-      setBills(billsFormatted);
-      setPurchases(purchasesFormatted);
+      setCarregando(false);
     } catch (err: any) {
       setErro(err.response?.data?.message || "Erro ao carregar dados");
-    } finally {
       setCarregando(false);
     }
   };
 
   const handleLogout = () => {
     authService.logout();
-  };
-
-  const handleAddBill = async (newBill: Omit<Bill, "id">) => {
-    try {
-      await mensalidadeService.criar({
-        id_estabelecimento: 1,
-        id_pagador: 1,
-        valor: newBill.amount,
-        data_vencimento: newBill.dueDate,
-        status: newBill.status,
-        descricao: newBill.name,
-      });
-      await carregarDados();
-    } catch (err) {
-      console.error("Erro ao adicionar mensalidade:", err);
-    }
-  };
-
-  const handleAddPurchase = async (newPurchase: Omit<Purchase, "id">) => {
-    try {
-      await compraService.criar({
-        id_estabelecimento: 1,
-        id_usuario_responsavel: usuario?.id_usuario || 1,
-        valor_unitario: newPurchase.amount,
-        valor_total: newPurchase.amount,
-        data_compra: newPurchase.date,
-        descricao: newPurchase.name,
-      });
-      await carregarDados();
-    } catch (err) {
-      console.error("Erro ao adicionar compra:", err);
-    }
   };
 
   const goToPreviousMonth = () => {
@@ -120,107 +83,106 @@ export default function Dashboard() {
     selectedDate.getMonth() === new Date().getMonth() &&
     selectedDate.getFullYear() === new Date().getFullYear();
 
-  const filteredBills = useMemo(() => {
-    return bills.filter((bill) => {
-      const billDate = new Date(bill.dueDate);
-      return (
-        billDate.getMonth() === selectedDate.getMonth() &&
-        billDate.getFullYear() === selectedDate.getFullYear()
-      );
-    });
-  }, [bills, selectedDate]);
-
-  const filteredPurchases = useMemo(() => {
-    return purchases.filter((purchase) => {
-      const purchaseDate = new Date(purchase.date);
-      return (
-        purchaseDate.getMonth() === selectedDate.getMonth() &&
-        purchaseDate.getFullYear() === selectedDate.getFullYear()
-      );
-    });
-  }, [purchases, selectedDate]);
-
   const monthNames = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
   const navItems = [
-    { id: "dashboard" as View, label: "Dashboard", icon: LayoutDashboard },
-    { id: "bills" as View, label: "Contas", icon: Receipt },
-    { id: "purchases" as View, label: "Compras", icon: ShoppingBag },
+    { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+    { label: "Pagadores", icon: Users, path: "/dashboard/pagadores" },
+    { label: "Mensalidades", icon: DollarSign, path: "/dashboard/mensalidades" },
+    { label: "Compras", icon: ShoppingCart, path: "/dashboard/compras" },
+    { label: "Estabelecimento", icon: Building, path: "/dashboard/estabelecimento" },
   ];
 
   if (carregando) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Carregando dados...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-orange-500 mx-auto mb-4" />
+          <p className="text-slate-400">Carregando dados...</p>
         </div>
       </div>
     );
   }
 
+  // Se não tiver estabelecimento, não renderizar nada (o useEffect vai redirecionar)
+  const estabelecimentoLS = authService.getEstabelecimento();
+  if (!estabelecimentoLS && !carregando) {
+    return null;
+  }
+
   if (erro) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="p-8 max-w-md">
-          <h2 className="text-xl font-semibold text-destructive mb-2">Erro ao carregar</h2>
-          <p className="text-muted-foreground mb-4">{erro}</p>
-          <Button onClick={carregarDados}>Tentar novamente</Button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <Card className="p-8 max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+          <h2 className="text-xl font-semibold text-red-500 mb-2">Erro ao carregar</h2>
+          <p className="text-slate-400 mb-4">{erro}</p>
+          <Button 
+            onClick={carregarDados}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+          >
+            Tentar novamente
+          </Button>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
-        <div className="w-64 min-h-screen bg-card border-r border-border p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Background gradient effect */}
+      <div className="absolute inset-0 bg-gradient-radial from-orange-500/20 via-transparent to-transparent opacity-50 blur-3xl pointer-events-none" />
+      
+      <div className="relative flex">
+        {/* Sidebar */}
+        <div className="w-64 min-h-screen bg-slate-900/60 backdrop-blur-sm border-r border-slate-700/50 p-6">
           <div className="mb-8">
-            <h1 className="mb-1 text-foreground">Finance Manager</h1>
-            <p className="text-muted-foreground">Gestão Financeira</p>
+            <h1 className="mb-1 text-white font-semibold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+              Finance Manager
+            </h1>
+            <p className="text-slate-400 text-sm">Gestão Financeira</p>
           </div>
 
           <nav className="space-y-2 mb-8">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentView === item.id;
+              const isActive = location.pathname === item.path;
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentView(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
+                      : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.label}</span>
-                </button>
+                </Link>
               );
             })}
           </nav>
 
-          <Card className="p-4 bg-secondary border-border">
-            <p className="text-muted-foreground mb-2">Período</p>
+          <Card className="p-4 bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+            <p className="text-slate-400 text-sm mb-2">Período</p>
             <div className="flex items-center justify-between mb-3">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={goToPreviousMonth}
-                className="h-8 w-8 text-foreground hover:text-primary"
+                className="h-8 w-8 text-slate-400 hover:text-orange-500 hover:bg-slate-700/50"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               
               <div className="text-center">
-                <p className="text-foreground">
+                <p className="text-white font-medium">
                   {monthNames[selectedDate.getMonth()].substring(0, 3)}
                 </p>
-                <p className="text-muted-foreground">
+                <p className="text-slate-400 text-sm">
                   {selectedDate.getFullYear()}
                 </p>
               </div>
@@ -229,27 +191,39 @@ export default function Dashboard() {
                 variant="ghost"
                 size="icon"
                 onClick={goToNextMonth}
-                className="h-8 w-8 text-foreground hover:text-primary"
+                className="h-8 w-8 text-slate-400 hover:text-orange-500 hover:bg-slate-700/50"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
             {!isCurrentMonth && (
-              <Button onClick={goToCurrentMonth} variant="outline" size="sm" className="w-full">
+              <Button 
+                onClick={goToCurrentMonth} 
+                variant="outline" 
+                size="sm" 
+                className="w-full border-slate-700 text-slate-300 hover:bg-slate-700/50 hover:text-white"
+              >
                 Mês Atual
               </Button>
             )}
           </Card>
 
-          <div className="mt-auto pt-6">
-            <Card className="p-4 bg-secondary border-border mb-4">
-              <p className="text-sm text-muted-foreground mb-1">Usuário</p>
-              <p className="font-medium text-foreground">{usuario?.nome || "Usuário"}</p>
+          <div className="mt-auto pt-6 space-y-4">
+            <Card className="p-4 bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-semibold">
+                  {usuario?.nome?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-white text-sm truncate">{usuario?.nome || "Usuário"}</p>
+                  <p className="text-xs text-slate-400 truncate">{usuario?.email || "email@exemplo.com"}</p>
+                </div>
+              </div>
             </Card>
             <Button 
               onClick={handleLogout} 
               variant="outline" 
-              className="w-full"
+              className="w-full border-slate-700 text-slate-300 hover:bg-slate-800/50 hover:text-white"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sair
@@ -257,20 +231,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex-1 p-8 bg-background">
-          {currentView === "dashboard" && (
-            <DashboardView
-              bills={filteredBills}
-              purchases={filteredPurchases}
-              selectedDate={selectedDate}
-            />
-          )}
-          {currentView === "bills" && (
-            <BillsView bills={filteredBills} onAddBill={handleAddBill} />
-          )}
-          {currentView === "purchases" && (
-            <PurchasesView purchases={filteredPurchases} onAddPurchase={handleAddPurchase} />
-          )}
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          <DashboardView />
         </div>
       </div>
     </div>

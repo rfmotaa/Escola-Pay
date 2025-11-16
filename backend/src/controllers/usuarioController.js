@@ -18,22 +18,18 @@ class UsuarioController{
         try{
             const body = req.body;
             
-            // Validação básica
             if (!body.nome || !body.email || !body.senha) {
                 return res.status(400).json({message: "Nome, email e senha são obrigatórios"});
             }
 
-            // Limpar campos vazios
             if (body.telefone === '') {
                 delete body.telefone;
             }
 
-            // Criptografa a senha
             body.senha = await CryptoManager.generateHash(body.senha);
 
             const novoUsuario = await Usuario.create(body);
             
-            // Remove a senha da resposta
             const usuarioResposta = {
                 id_usuario: novoUsuario.id_usuario,
                 nome: novoUsuario.nome,
@@ -67,7 +63,6 @@ class UsuarioController{
                 return res.status(401).json({ message: "Senha incorreta" });
             }
 
-            // Gerar token JWT
             const token = jwt.sign(
                 { 
                     id_usuario: usuario.id_usuario,
