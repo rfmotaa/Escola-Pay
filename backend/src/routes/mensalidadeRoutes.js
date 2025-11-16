@@ -1,5 +1,6 @@
 import express from "express";
 import MensalidadeController from "../controllers/mensalidadeController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const routes = express.Router();
 
@@ -75,7 +76,7 @@ const routes = express.Router();
  *       500:
  *         description: Erro ao listar mensalidades
  */
-routes.get("/mensalidades", MensalidadeController.listarMensalidades);
+routes.get("/mensalidades", authMiddleware, MensalidadeController.listarMensalidades);
 
 /**
  * @swagger
@@ -107,7 +108,7 @@ routes.get("/mensalidades", MensalidadeController.listarMensalidades);
  *       500:
  *         description: Erro ao cadastrar mensalidade
  */
-routes.post("/mensalidades", MensalidadeController.cadastrarMensalidade);
+routes.post("/mensalidades", authMiddleware, MensalidadeController.cadastrarMensalidade);
 
 /**
  * @swagger
@@ -134,7 +135,7 @@ routes.post("/mensalidades", MensalidadeController.cadastrarMensalidade);
  *       500:
  *         description: Erro ao buscar mensalidade
  */
-routes.get("/mensalidades/:id", MensalidadeController.buscarMensalidadePorId);
+routes.get("/mensalidades/:id", authMiddleware, MensalidadeController.buscarMensalidadePorId);
 
 /**
  * @swagger
@@ -173,7 +174,7 @@ routes.get("/mensalidades/:id", MensalidadeController.buscarMensalidadePorId);
  *       500:
  *         description: Erro ao atualizar mensalidade
  */
-routes.put("/mensalidades/:id", MensalidadeController.atualizarMensalidade);
+routes.put("/mensalidades/:id", authMiddleware, MensalidadeController.atualizarMensalidade);
 
 /**
  * @swagger
@@ -196,6 +197,6 @@ routes.put("/mensalidades/:id", MensalidadeController.atualizarMensalidade);
  *       500:
  *         description: Erro ao deletar mensalidade
  */
-routes.delete("/mensalidades/:id", MensalidadeController.deletarMensalidade);
+routes.delete("/mensalidades/:id", authMiddleware, MensalidadeController.deletarMensalidade);
 
 export default routes;

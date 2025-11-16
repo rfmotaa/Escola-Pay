@@ -1,5 +1,6 @@
 import express from "express";
 import EstabelecimentoController from "../controllers/estabelecimentoController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const routes = express.Router();
 
@@ -66,7 +67,7 @@ const routes = express.Router();
  *       500:
  *         description: Erro ao listar estabelecimentos
  */
-routes.get("/estabelecimentos", EstabelecimentoController.listarEstabelecimentos);
+routes.get("/estabelecimentos", authMiddleware, EstabelecimentoController.listarEstabelecimentos);
 
 /**
  * @swagger
@@ -105,7 +106,7 @@ routes.get("/estabelecimentos", EstabelecimentoController.listarEstabelecimentos
  *       500:
  *         description: Erro ao buscar estabelecimentos do usuário
  */
-routes.get("/estabelecimentos/usuario/:idUsuario", EstabelecimentoController.listarEstabelecimentosDoUsuario);
+routes.get("/estabelecimentos/usuario/:idUsuario", authMiddleware, EstabelecimentoController.listarEstabelecimentosDoUsuario);
 
 /**
  * @swagger
@@ -137,7 +138,7 @@ routes.get("/estabelecimentos/usuario/:idUsuario", EstabelecimentoController.lis
  *       500:
  *         description: Erro ao cadastrar estabelecimento
  */
-routes.post("/estabelecimentos", EstabelecimentoController.cadastrarEstabelecimento);
+routes.post("/estabelecimentos", authMiddleware, EstabelecimentoController.cadastrarEstabelecimento);
 
 /**
  * @swagger
@@ -164,7 +165,7 @@ routes.post("/estabelecimentos", EstabelecimentoController.cadastrarEstabelecime
  *       500:
  *         description: Erro ao buscar estabelecimento
  */
-routes.get("/estabelecimentos/:id", EstabelecimentoController.buscarEstabelecimentoPorId);
+routes.get("/estabelecimentos/:id", authMiddleware, EstabelecimentoController.buscarEstabelecimentoPorId);
 
 /**
  * @swagger
@@ -203,7 +204,7 @@ routes.get("/estabelecimentos/:id", EstabelecimentoController.buscarEstabelecime
  *       500:
  *         description: Erro ao atualizar estabelecimento
  */
-routes.put("/estabelecimentos/:id", EstabelecimentoController.atualizarEstabelecimento);
+routes.put("/estabelecimentos/:id", authMiddleware, EstabelecimentoController.atualizarEstabelecimento);
 
 /**
  * @swagger
@@ -226,6 +227,6 @@ routes.put("/estabelecimentos/:id", EstabelecimentoController.atualizarEstabelec
  *       500:
  *         description: Erro ao deletar estabelecimento
  */
-routes.delete("/estabelecimentos/:id", EstabelecimentoController.deletarEstabelecimento);
+routes.delete("/estabelecimentos/:id", authMiddleware, EstabelecimentoController.deletarEstabelecimento);
 
 export default routes;

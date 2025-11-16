@@ -1,5 +1,6 @@
 import express from "express";
 import UsuarioController from "../controllers/usuarioController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const routes = express.Router();
 
@@ -64,7 +65,7 @@ const routes = express.Router();
  *       500:
  *         description: Erro ao listar usuários
  */
-routes.get("/usuarios", UsuarioController.listarUsuarios);
+routes.get("/usuarios", authMiddleware, UsuarioController.listarUsuarios);
 
 /**
  * @swagger
@@ -182,7 +183,7 @@ routes.post("/usuarios/login", UsuarioController.login);
  *       500:
  *         description: Erro ao buscar usuário
  */
-routes.get("/usuarios/:id", UsuarioController.buscarUsuarioPorId);
+routes.get("/usuarios/:id", authMiddleware, UsuarioController.buscarUsuarioPorId);
 
 /**
  * @swagger
@@ -221,7 +222,7 @@ routes.get("/usuarios/:id", UsuarioController.buscarUsuarioPorId);
  *       500:
  *         description: Erro ao atualizar usuário
  */
-routes.put("/usuarios/:id", UsuarioController.atualizarUsuario);
+routes.put("/usuarios/:id", authMiddleware, UsuarioController.atualizarUsuario);
 
 /**
  * @swagger
@@ -244,6 +245,6 @@ routes.put("/usuarios/:id", UsuarioController.atualizarUsuario);
  *       500:
  *         description: Erro ao deletar usuário
  */
-routes.delete("/usuarios/:id", UsuarioController.deletarUsuario);
+routes.delete("/usuarios/:id", authMiddleware, UsuarioController.deletarUsuario);
 
 export default routes;

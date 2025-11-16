@@ -1,5 +1,6 @@
 import express from "express";
 import CompraController from "../controllers/compraController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const routes = express.Router();
 
@@ -64,7 +65,7 @@ const routes = express.Router();
  *       500:
  *         description: Erro ao listar compras
  */
-routes.get("/compras", CompraController.listarCompras);
+routes.get("/compras", authMiddleware, CompraController.listarCompras);
 
 /**
  * @swagger
@@ -88,7 +89,7 @@ routes.get("/compras", CompraController.listarCompras);
  *       500:
  *         description: Erro ao cadastrar compra
  */
-routes.post("/compras", CompraController.cadastrarCompra);
+routes.post("/compras", authMiddleware, CompraController.cadastrarCompra);
 
 /**
  * @swagger
@@ -115,7 +116,7 @@ routes.post("/compras", CompraController.cadastrarCompra);
  *       500:
  *         description: Erro ao buscar compra
  */
-routes.get("/compras/:id", CompraController.buscarCompraPorId);
+routes.get("/compras/:id", authMiddleware, CompraController.buscarCompraPorId);
 
 /**
  * @swagger
@@ -148,7 +149,7 @@ routes.get("/compras/:id", CompraController.buscarCompraPorId);
  *       500:
  *         description: Erro ao atualizar compra
  */
-routes.put("/compras/:id", CompraController.atualizarCompra);
+routes.put("/compras/:id", authMiddleware, CompraController.atualizarCompra);
 
 /**
  * @swagger
@@ -171,6 +172,6 @@ routes.put("/compras/:id", CompraController.atualizarCompra);
  *       500:
  *         description: Erro ao deletar compra
  */
-routes.delete("/compras/:id", CompraController.deletarCompra);
+routes.delete("/compras/:id", authMiddleware, CompraController.deletarCompra);
 
 export default routes;

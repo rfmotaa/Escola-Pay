@@ -16,7 +16,7 @@ class MensalidadeController{
         try{
             const body = req.body;
             const novaMensalidade = await Mensalidade.create(body);
-            res.status(200).json({ message: "Mensalidade criada com sucesso", mensalidade: novaMensalidade });
+            res.status(201).json({ message: "Mensalidade criada com sucesso", mensalidade: novaMensalidade });
         }
         catch(erro){
             res.status(500).json({message: `${erro.message} - falha ao cadastrar mensalidade`});

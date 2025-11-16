@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./home.ui/dialog";
-import { Button } from "./home.ui/button";
-import { Input } from "./home.ui/input";
-import { Label } from "./home.ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./home.ui/select";
-import { Textarea } from "./home.ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./dashboard.ui/dialog";
+import { Button } from "./dashboard.ui/button";
+import { Input } from "./dashboard.ui/input";
+import { Label } from "./dashboard.ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./dashboard.ui/select";
+import { Textarea } from "./dashboard.ui/textarea";
 import { Plus } from "lucide-react";
 import { Purchase } from "./PurchaseCard";
 

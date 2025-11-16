@@ -1,5 +1,6 @@
 import express from "express";
 import PagadorController from "../controllers/pagadorController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const routes = express.Router();
 
@@ -62,7 +63,7 @@ const routes = express.Router();
  *       500:
  *         description: Erro ao listar pagadores
  */
-routes.get("/pagadores", PagadorController.listarPagadores);
+routes.get("/pagadores", authMiddleware, PagadorController.listarPagadores);
 
 /**
  * @swagger
@@ -94,7 +95,7 @@ routes.get("/pagadores", PagadorController.listarPagadores);
  *       500:
  *         description: Erro ao cadastrar pagador
  */
-routes.post("/pagadores", PagadorController.cadastrarPagador);
+routes.post("/pagadores", authMiddleware, PagadorController.cadastrarPagador);
 
 /**
  * @swagger
@@ -121,7 +122,7 @@ routes.post("/pagadores", PagadorController.cadastrarPagador);
  *       500:
  *         description: Erro ao buscar pagador
  */
-routes.get("/pagadores/:id", PagadorController.buscarPagadorPorId);
+routes.get("/pagadores/:id", authMiddleware, PagadorController.buscarPagadorPorId);
 
 /**
  * @swagger
@@ -160,7 +161,7 @@ routes.get("/pagadores/:id", PagadorController.buscarPagadorPorId);
  *       500:
  *         description: Erro ao atualizar pagador
  */
-routes.put("/pagadores/:id", PagadorController.atualizarPagador);
+routes.put("/pagadores/:id", authMiddleware, PagadorController.atualizarPagador);
 
 /**
  * @swagger
@@ -183,6 +184,6 @@ routes.put("/pagadores/:id", PagadorController.atualizarPagador);
  *       500:
  *         description: Erro ao deletar pagador
  */
-routes.delete("/pagadores/:id", PagadorController.deletarPagador);
+routes.delete("/pagadores/:id", authMiddleware, PagadorController.deletarPagador);
 
 export default routes;

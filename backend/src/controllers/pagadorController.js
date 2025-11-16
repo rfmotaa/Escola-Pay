@@ -16,7 +16,7 @@ class PagadorController{
         try{
             const body = req.body;
             const novoPagador = await Pagador.create(body);
-            res.status(200).json({ message: "Pagador criado com sucesso", pagador: novoPagador });
+            res.status(201).json({ message: "Pagador criado com sucesso", pagador: novoPagador });
         }
         catch(erro){
             res.status(500).json({message: `${erro.message} - falha ao cadastrar pagador`});

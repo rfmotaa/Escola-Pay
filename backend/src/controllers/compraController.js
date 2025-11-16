@@ -16,7 +16,7 @@ class CompraController{
         try{
             const body = req.body;
             const novaCompra = await Compra.create(body);
-            res.status(200).json({ message: "Compra criada com sucesso", compra: novaCompra });
+            res.status(201).json({ message: "Compra criada com sucesso", compra: novaCompra });
         }
         catch(erro){
             res.status(500).json({message: `${erro.message} - falha ao cadastrar compra`});

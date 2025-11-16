@@ -1,5 +1,6 @@
 import express from "express";
 import ItemCompraController from "../controllers/itemCompraController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const routes = express.Router();
 
@@ -72,7 +73,7 @@ const routes = express.Router();
  *       500:
  *         description: Erro ao listar itens de compra
  */
-routes.get("/itens-compra", ItemCompraController.listarItensCompra);
+routes.get("/itens-compra", authMiddleware, ItemCompraController.listarItensCompra);
 
 /**
  * @swagger
@@ -104,7 +105,7 @@ routes.get("/itens-compra", ItemCompraController.listarItensCompra);
  *       500:
  *         description: Erro ao cadastrar item de compra
  */
-routes.post("/itens-compra", ItemCompraController.cadastrarItemCompra);
+routes.post("/itens-compra", authMiddleware, ItemCompraController.cadastrarItemCompra);
 
 /**
  * @swagger
@@ -131,7 +132,7 @@ routes.post("/itens-compra", ItemCompraController.cadastrarItemCompra);
  *       500:
  *         description: Erro ao buscar item de compra
  */
-routes.get("/itens-compra/:id", ItemCompraController.buscarItemCompraPorId);
+routes.get("/itens-compra/:id", authMiddleware, ItemCompraController.buscarItemCompraPorId);
 
 /**
  * @swagger
@@ -170,7 +171,7 @@ routes.get("/itens-compra/:id", ItemCompraController.buscarItemCompraPorId);
  *       500:
  *         description: Erro ao atualizar item de compra
  */
-routes.put("/itens-compra/:id", ItemCompraController.atualizarItemCompra);
+routes.put("/itens-compra/:id", authMiddleware, ItemCompraController.atualizarItemCompra);
 
 /**
  * @swagger
@@ -193,6 +194,6 @@ routes.put("/itens-compra/:id", ItemCompraController.atualizarItemCompra);
  *       500:
  *         description: Erro ao deletar item de compra
  */
-routes.delete("/itens-compra/:id", ItemCompraController.deletarItemCompra);
+routes.delete("/itens-compra/:id", authMiddleware, ItemCompraController.deletarItemCompra);
 
 export default routes;

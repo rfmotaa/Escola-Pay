@@ -1,6 +1,7 @@
 import '../styles/Dashboard.css';
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bill } from "../components/BillCard";
 import { Purchase } from "../components/PurchaseCard";
 import { DashboardView } from "../components/DashboardView";
@@ -8,146 +9,99 @@ import { BillsView } from "../components/BillsView";
 import { PurchasesView } from "../components/PurchasesView";
 import { Card } from "../components/dashboard.ui/card";
 import { Button } from "../components/dashboard.ui/button";
-import { LayoutDashboard, Receipt, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
-
-const initialBills: Bill[] = [
-  {
-    id: "1",
-    name: "Electric Bill",
-    amount: 150.50,
-    payer: "John Doe",
-    dueDate: "2025-11-15",
-    status: "pending",
-  },
-  {
-    id: "2",
-    name: "Internet Service",
-    amount: 79.99,
-    payer: "Jane Smith",
-    dueDate: "2025-11-20",
-    status: "paid",
-  },
-  {
-    id: "3",
-    name: "Water Bill",
-    amount: 45.00,
-    payer: "John Doe",
-    dueDate: "2025-11-05",
-    status: "overdue",
-  },
-  {
-    id: "4",
-    name: "Phone Bill",
-    amount: 65.00,
-    payer: "Jane Smith",
-    dueDate: "2025-11-25",
-    status: "pending",
-  },
-  {
-    id: "5",
-    name: "Electric Bill",
-    amount: 145.00,
-    payer: "John Doe",
-    dueDate: "2025-10-15",
-    status: "paid",
-  },
-  {
-    id: "6",
-    name: "Internet Service",
-    amount: 79.99,
-    payer: "Jane Smith",
-    dueDate: "2025-10-20",
-    status: "paid",
-  },
-  {
-    id: "7",
-    name: "Rent",
-    amount: 1200.00,
-    payer: "John Doe",
-    dueDate: "2025-12-01",
-    status: "pending",
-  },
-];
-
-const initialPurchases: Purchase[] = [
-  {
-    id: "1",
-    name: "Grocery Shopping",
-    amount: 125.40,
-    category: "groceries",
-    date: "2025-11-08",
-    description: "Weekly groceries from Whole Foods",
-  },
-  {
-    id: "2",
-    name: "Movie Tickets",
-    amount: 35.00,
-    category: "entertainment",
-    date: "2025-11-07",
-    description: "2 tickets for the new movie",
-  },
-  {
-    id: "3",
-    name: "Gas Station",
-    amount: 52.30,
-    category: "transport",
-    date: "2025-11-06",
-  },
-  {
-    id: "4",
-    name: "Coffee Shop",
-    amount: 12.50,
-    category: "other",
-    date: "2025-11-09",
-    description: "Morning coffee and pastry",
-  },
-  {
-    id: "5",
-    name: "Grocery Shopping",
-    amount: 98.20,
-    category: "groceries",
-    date: "2025-10-22",
-    description: "Weekly groceries",
-  },
-  {
-    id: "6",
-    name: "Restaurant",
-    amount: 65.00,
-    category: "entertainment",
-    date: "2025-10-18",
-  },
-  {
-    id: "7",
-    name: "Amazon Purchase",
-    amount: 145.00,
-    category: "other",
-    date: "2025-12-02",
-    description: "Holiday gifts",
-  },
-];
+import { LayoutDashboard, Receipt, ShoppingBag, ChevronLeft, ChevronRight, LogOut, Loader2 } from "lucide-react";
+import { authService } from "../services/auth.service";
+import { mensalidadeService } from "../services/mensalidade.service";
+import { compraService } from "../services/compra.service";
 
 type View = "dashboard" | "bills" | "purchases";
 
 export default function Dashboard() {
-  const [bills, setBills] = useState<Bill[]>(initialBills);
-  const [purchases, setPurchases] = useState<Purchase[]>(initialPurchases);
+  const navigate = useNavigate();
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>("dashboard");
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
 
-  const handleAddBill = (newBill: Omit<Bill, "id">) => {
-    const bill: Bill = {
-      ...newBill,
-      id: Date.now().toString(),
-    };
-    setBills([bill, ...bills]);
+  const usuario = authService.getUsuarioLogado();
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    try {
+      setCarregando(true);
+      setErro("");
+
+      const [mensalidadesData, comprasData] = await Promise.all([
+        mensalidadeService.listar(),
+        compraService.listar(),
+      ]);
+
+      const billsFormatted: Bill[] = mensalidadesData.map((m: any) => ({
+        id: m.id_mensalidade.toString(),
+        name: m.descricao || "Mensalidade",
+        amount: parseFloat(m.valor),
+        payer: "Pagador",
+        dueDate: m.data_vencimento,
+        status: m.status === "pago" ? "paid" : m.status === "atrasado" ? "overdue" : "pending",
+      }));
+
+      const purchasesFormatted: Purchase[] = comprasData.map((c: any) => ({
+        id: c.id_compra.toString(),
+        name: c.descricao || "Compra",
+        amount: parseFloat(c.valor_total),
+        category: "other",
+        date: c.data_compra,
+        description: c.descricao || "",
+      }));
+
+      setBills(billsFormatted);
+      setPurchases(purchasesFormatted);
+    } catch (err: any) {
+      setErro(err.response?.data?.message || "Erro ao carregar dados");
+    } finally {
+      setCarregando(false);
+    }
   };
 
-  const handleAddPurchase = (newPurchase: Omit<Purchase, "id">) => {
-    const purchase: Purchase = {
-      ...newPurchase,
-      id: Date.now().toString(),
-    };
-    setPurchases([purchase, ...purchases]);
+  const handleLogout = () => {
+    authService.logout();
+  };
+
+  const handleAddBill = async (newBill: Omit<Bill, "id">) => {
+    try {
+      await mensalidadeService.criar({
+        id_estabelecimento: 1,
+        id_pagador: 1,
+        valor: newBill.amount,
+        data_vencimento: newBill.dueDate,
+        status: newBill.status,
+        descricao: newBill.name,
+      });
+      await carregarDados();
+    } catch (err) {
+      console.error("Erro ao adicionar mensalidade:", err);
+    }
+  };
+
+  const handleAddPurchase = async (newPurchase: Omit<Purchase, "id">) => {
+    try {
+      await compraService.criar({
+        id_estabelecimento: 1,
+        id_usuario_responsavel: usuario?.id_usuario || 1,
+        valor_unitario: newPurchase.amount,
+        valor_total: newPurchase.amount,
+        data_compra: newPurchase.date,
+        descricao: newPurchase.name,
+      });
+      await carregarDados();
+    } catch (err) {
+      console.error("Erro ao adicionar compra:", err);
+    }
   };
 
   const goToPreviousMonth = () => {
@@ -196,6 +150,29 @@ export default function Dashboard() {
     { id: "bills" as View, label: "Contas", icon: Receipt },
     { id: "purchases" as View, label: "Compras", icon: ShoppingBag },
   ];
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (erro) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="p-8 max-w-md">
+          <h2 className="text-xl font-semibold text-destructive mb-2">Erro ao carregar</h2>
+          <p className="text-muted-foreground mb-4">{erro}</p>
+          <Button onClick={carregarDados}>Tentar novamente</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -263,6 +240,21 @@ export default function Dashboard() {
               </Button>
             )}
           </Card>
+
+          <div className="mt-auto pt-6">
+            <Card className="p-4 bg-secondary border-border mb-4">
+              <p className="text-sm text-muted-foreground mb-1">Usuário</p>
+              <p className="font-medium text-foreground">{usuario?.nome || "Usuário"}</p>
+            </Card>
+            <Button 
+              onClick={handleLogout} 
+              variant="outline" 
+              className="w-full"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 p-8 bg-background">

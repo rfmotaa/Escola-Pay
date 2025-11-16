@@ -1,6 +1,6 @@
 import Usuario from "../models/Usuario.js";
-import { validate } from "../plugins/schemaValidator.js";
 import { CryptoManager } from "../config/crypto.js";
+import jwt from "jsonwebtoken";
 
 class UsuarioController{
 
@@ -9,21 +9,27 @@ class UsuarioController{
             const listaUsuarios = await Usuario.findAll();
             res.status(200).json(listaUsuarios);
         }
-        catch{
-            res.status(500).json({message: `${err.message} = falha na requisicao`});
+        catch(err){
+            res.status(500).json({message: `${err.message} - falha na requisicao`});
         }
     }
 
     static async cadastrarUsuario (req, res){
         try{
             const body = req.body;
+            
             // Validação básica
             if (!body.nome || !body.email || !body.senha) {
-                return res.status(400).json({message: `Nome, email e senha são obrigatórios`});
+                return res.status(400).json({message: "Nome, email e senha são obrigatórios"});
+            }
+
+            // Limpar campos vazios
+            if (body.telefone === '') {
+                delete body.telefone;
             }
 
             // Criptografa a senha
-            body.senha = CryptoManager.generateHash(body.senha);
+            body.senha = await CryptoManager.generateHash(body.senha);
 
             const novoUsuario = await Usuario.create(body);
             
@@ -50,16 +56,40 @@ class UsuarioController{
     static async login (req, res) {
         try{
             const { email, senha } = req.body;
-            const usuario = await Usuario.findOne({ email });
-            if (!usuario) throw Error("Usuário não encontrado!");
+            const usuario = await Usuario.findOne({ where: { email } });
+            
+            if (!usuario) {
+                return res.status(404).json({ message: "Usuário não encontrado" });
+            }
 
-            if (!CryptoManager.compareHash(senha, usuario.senha))
-                throw Error("A senha está incorreta!");
+            const senhaValida = await CryptoManager.compareHash(senha, usuario.senha);
+            if (!senhaValida) {
+                return res.status(401).json({ message: "Senha incorreta" });
+            }
 
-            res.status(200).json({ message:"usuario logado com sucesso"});
+            // Gerar token JWT
+            const token = jwt.sign(
+                { 
+                    id_usuario: usuario.id_usuario,
+                    email: usuario.email,
+                    nome: usuario.nome 
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+            );
+
+            res.status(200).json({ 
+                message: "Usuário logado com sucesso",
+                token,
+                usuario: {
+                    id_usuario: usuario.id_usuario,
+                    nome: usuario.nome,
+                    email: usuario.email
+                }
+            });
         }
         catch(erro){
-            res.status(500).json({message: `${erro.message}`});
+            res.status(500).json({message: `${erro.message} - falha ao efetuar login`});
         }
     }
 
@@ -86,7 +116,7 @@ class UsuarioController{
             const body = req.body;
 
             if (body.senha) {
-                body.senha = CryptoManager.generateHash(body.senha);
+                body.senha = await CryptoManager.generateHash(body.senha);
             }
 
             const [updated] = await Usuario.update(body, {

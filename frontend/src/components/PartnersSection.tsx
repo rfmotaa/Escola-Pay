@@ -1,5 +1,5 @@
 import { Building2, Landmark, CreditCard, Shield } from "lucide-react";
-import { Card } from "./home.ui/card";
+import { Card } from "./dashboard.ui/card";
 
 const partners = [
   {
