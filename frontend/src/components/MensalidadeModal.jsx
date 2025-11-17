@@ -102,7 +102,12 @@ export default function MensalidadeModal({ open, onOpenChange, mensalidade, onSa
 
       toast.success("Pagador cadastrado com sucesso!");
       
-      await carregarPagadores();
+      const data = await pagadorService.listar();
+      const pagadoresDoEstabelecimento = data.filter(
+        (p) => p.id_estabelecimento === estabelecimento?.id_estabelecimento
+      );
+      setPagadores(pagadoresDoEstabelecimento);
+      
       setFormData({ ...formData, id_pagador: pagadorCriado.id_pagador.toString() });
       setShowPagadorForm(false);
       setNovoPagadorData({
@@ -182,7 +187,7 @@ export default function MensalidadeModal({ open, onOpenChange, mensalidade, onSa
           </DialogTitle>
         </DialogHeader>
 
-        {pagadores.length === 0 && !mensalidade ? (
+        {showPagadorForm || (pagadores.length === 0 && !mensalidade) ? (
           <div className="space-y-4">
             <div className="bg-amber-500/10 border border-amber-500/50 rounded-lg p-4">
               <p className="text-amber-400 text-sm">

@@ -13,12 +13,12 @@ export const pagadorService = {
 
   async criar(dados) {
     const response = await api.post('/pagadores', dados);
-    return response.data;
+    return response.data.pagador;
   },
 
   async atualizar(id, dados) {
     const response = await api.put(`/pagadores/${id}`, dados);
-    return response.data;
+    return response.data.pagador;
   },
 
   async deletar(id) {
