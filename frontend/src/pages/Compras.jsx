@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Sidebar } from "../components/Sidebar";
+import { useState, useEffect, useCallback } from "react";
+import DashboardSideBar from "../components/DashboardSidebar";
 import { compraService } from "../services/compra.service";
 import { authService } from "../services/auth.service";
 import { Button } from "../components/dashboard.ui/button";
@@ -34,17 +34,43 @@ export default function Compras() {
   const [viewingCompra, setViewingCompra] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [compraToDelete, setCompraToDelete] = useState(null);
+  const [dataSelecionada, setDataSelecionada] = useState(new Date());
+  const [totalMes, setTotalMes] = useState(0);
+  const [numComprasMes, setNumComprasMes] = useState(0);
+  const [compraMaisCara, setCompraMaisCara] = useState(null);
 
   const estabelecimento = authService.getEstabelecimento();
+
+  const handleDateChange = useCallback((date) => {
+    setDataSelecionada(date);
+  }, []);
 
   useEffect(() => {
     carregarCompras();
   }, []);
 
+  
   useEffect(() => {
     aplicarFiltros();
   }, [searchTerm, categoriaFilter, compras]);
-
+  
+  const loadComprasUsingDate = () => {
+    const currentMonth = dataSelecionada.getMonth();
+    const currentYear = dataSelecionada.getFullYear();
+    
+    const comprasDoMes = compras.filter((c) => {
+      const date = new Date(c.data_compra);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    });
+    
+    setTotalMes(comprasDoMes.reduce((sum, c) => sum + parseFloat(c.valor_total || 0), 0));
+    setNumComprasMes(comprasDoMes.length);
+    setCompraMaisCara(compras.length > 0
+      ? Math.max(...compras.map((c) => parseFloat(c.valor_total || 0)))
+      : 0);
+    }
+    
+  useEffect(loadComprasUsingDate, [dataSelecionada, compras]);
   const carregarCompras = async () => {
     try {
       setLoading(true);
@@ -54,6 +80,7 @@ export default function Compras() {
       );
       setCompras(comprasDoEstabelecimento);
       setFilteredCompras(comprasDoEstabelecimento);
+      
     } catch (err) {
       console.error("Erro ao carregar compras:", err);
       toast.error("Erro ao carregar compras");
@@ -133,20 +160,6 @@ export default function Compras() {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-
-  const comprasDoMes = compras.filter((c) => {
-    const date = new Date(c.data_compra);
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-  });
-
-  const totalMes = comprasDoMes.reduce((sum, c) => sum + parseFloat(c.valor_total || 0), 0);
-  const numComprasMes = comprasDoMes.length;
-  const compraMaisCara = compras.length > 0
-    ? Math.max(...compras.map((c) => parseFloat(c.valor_total || 0)))
-    : 0;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
@@ -159,7 +172,7 @@ export default function Compras() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
       <div className="absolute inset-0 bg-gradient-radial from-orange-500/20 via-transparent to-transparent opacity-50 blur-3xl pointer-events-none" />
       
-      <Sidebar />
+      <DashboardSideBar onDateChange={handleDateChange} />
 
       <div className="flex-1 p-6 relative">
         <div className="max-w-7xl mx-auto space-y-6">
