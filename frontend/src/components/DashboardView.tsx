@@ -8,7 +8,7 @@ import { compraService } from "../services/compra.service";
 import { pagadorService } from "../services/pagador.service";
 import { authService } from "../services/auth.service";
 
-export function DashboardView() {
+export function DashboardView({ selectedDate }: { selectedDate: Date }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -25,14 +25,17 @@ export function DashboardView() {
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [selectedDate]);
 
   const carregarDados = async () => {
     try {
       setLoading(true);
-
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+      let dateSelected = new Date();
+      if (selectedDate) {
+        dateSelected = selectedDate
+      }
+      const currentMonth = dateSelected.getMonth();
+      const currentYear = dateSelected.getFullYear();
 
       const [mensalidadesData, comprasData, pagadoresData] = await Promise.all([
         mensalidadeService.listar(),

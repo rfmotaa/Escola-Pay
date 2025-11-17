@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sidebar } from "../components/Sidebar";
+import DashboardSideBar from "../components/DashboardSidebar";
 import { pagadorService } from "../services/pagador.service";
 import { authService } from "../services/auth.service";
 import { Button } from "../components/dashboard.ui/button";
@@ -28,6 +28,7 @@ export default function Pagadores() {
   const [editingPagador, setEditingPagador] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pagadorToDelete, setPagadorToDelete] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   const estabelecimento = authService.getEstabelecimento();
 
@@ -100,9 +101,10 @@ export default function Pagadores() {
 
   const totalPagadores = pagadores.length;
   const pagadoresAtivos = pagadores.filter((p) => {
-    const dataRecente = new Date();
-    dataRecente.setMonth(dataRecente.getMonth() - 1);
-    return new Date(p.createdAt) > dataRecente;
+    const usedDate = selectedDate || new Date()
+
+    usedDate.setMonth(usedDate.getMonth() - 1);
+    return new Date(p.createdAt) > usedDate;
   }).length;
 
   if (loading) {
@@ -117,7 +119,7 @@ export default function Pagadores() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
       <div className="absolute inset-0 bg-gradient-radial from-orange-500/20 via-transparent to-transparent opacity-50 blur-3xl pointer-events-none" />
       
-      <Sidebar />
+      <DashboardSideBar onDateChange={(date) => setSelectedDate(date)} />
 
       <div className="flex-1 p-6 relative">
         <div className="max-w-7xl mx-auto space-y-6">
