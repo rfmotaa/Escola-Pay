@@ -1,6 +1,6 @@
 import '../styles/Dashboard.css';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardView } from "../components/DashboardView";
 import { Card } from "../components/dashboard.ui/card";
@@ -17,6 +17,10 @@ export default function Dashboard() {
   const [erro, setErro] = useState("");
   const [estabelecimento, setEstabelecimento] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<any>(null);
+
+  const handleDateChange = useCallback((date: any) => {
+      setSelectedDate(date);
+  }, []);
 
   const usuario = authService.getUsuarioLogado();
 
@@ -105,7 +109,7 @@ export default function Dashboard() {
       
       <div className="relative flex">
         {/* Sidebar */}
-        <DashboardSideBar onDateChange={(date: any) => setSelectedDate(date)} />
+        <DashboardSideBar onDateChange={handleDateChange} />
 
         {/* Main Content */}
         <div className="flex-1 p-8">

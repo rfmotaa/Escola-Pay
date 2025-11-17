@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DashboardSideBar from "../components/DashboardSidebar";
 import { pagadorService } from "../services/pagador.service";
 import { authService } from "../services/auth.service";
@@ -34,6 +34,10 @@ export default function Pagadores() {
 
   useEffect(() => {
     carregarPagadores();
+  }, []);
+
+  const handleDateChange = useCallback((date) => {
+    setSelectedDate(date);
   }, []);
 
   useEffect(() => {
@@ -119,7 +123,7 @@ export default function Pagadores() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
       <div className="absolute inset-0 bg-gradient-radial from-orange-500/20 via-transparent to-transparent opacity-50 blur-3xl pointer-events-none" />
       
-      <DashboardSideBar onDateChange={(date) => setSelectedDate(date)} />
+      <DashboardSideBar onDateChange={handleDateChange} />
 
       <div className="flex-1 p-6 relative">
         <div className="max-w-7xl mx-auto space-y-6">

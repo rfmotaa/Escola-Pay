@@ -10,7 +10,7 @@ export default function DashboardSideBar({ onDateChange }) {
     const usuario = authService.getUsuarioLogado();
     const location = useLocation();
 
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [dataSelecionada, setDataSelecionada] = useState(new Date());
     const [isOpen, setIsOpen] = useState(false);
 
     const navItems = [
@@ -25,26 +25,27 @@ export default function DashboardSideBar({ onDateChange }) {
         authService.logout();
     };
 
-    useEffect(() => {
-        if (selectedDate)
-            onDateChange(selectedDate);
-    }, [selectedDate])
-
     const goToPreviousMonth = () => {
-        setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1));
+        const newDate = new Date(dataSelecionada.getFullYear(), dataSelecionada.getMonth() - 1, 1);
+        onDateChange(newDate);
+        setDataSelecionada(newDate);
     };
 
     const goToNextMonth = () => {
-        setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1));
+        const newDate = new Date(dataSelecionada.getFullYear(), dataSelecionada.getMonth() + 1, 1);
+        setDataSelecionada(newDate);
+        onDateChange(newDate);
     };
 
     const goToCurrentMonth = () => {
-        setSelectedDate(new Date());
+        const newDate = new Date();
+        setDataSelecionada(newDate);
+        onDateChange(newDate);
     };
 
     const isCurrentMonth =
-        selectedDate.getMonth() === new Date().getMonth() &&
-        selectedDate.getFullYear() === new Date().getFullYear();
+        dataSelecionada.getMonth() === new Date().getMonth() &&
+        dataSelecionada.getFullYear() === new Date().getFullYear();
 
     const monthNames = [
         "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -113,10 +114,10 @@ export default function DashboardSideBar({ onDateChange }) {
 
                         <div className="text-center">
                             <p className="text-white font-medium">
-                                {monthNames[selectedDate.getMonth()].substring(0, 3)}
+                                {monthNames[dataSelecionada.getMonth()].substring(0, 3)}
                             </p>
                             <p className="text-slate-400 text-sm">
-                                {selectedDate.getFullYear()}
+                                {dataSelecionada.getFullYear()}
                             </p>
                         </div>
 
