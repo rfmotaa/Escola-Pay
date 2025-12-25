@@ -1,5 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
-import DashboardSideBar from "../components/DashboardSidebar";
+/**
+ * @fileoverview Página de Pagadores refatorada
+ * 
+ * Melhorias:
+ * - Usa layout compartilhado
+ * - Hook usePagination para paginação
+ * - Skeleton loading
+ * - Transições suaves
+ */
+
+import { useState, useEffect, useMemo } from "react";
+import { useOutletContext } from "react-router-dom";
 import { pagadorService } from "../services/pagador.service";
 import { authService } from "../services/auth.service";
 import { Button } from "../components/dashboard.ui/button";
@@ -8,6 +18,9 @@ import { Input } from "../components/dashboard.ui/input";
 import { toast } from "sonner";
 import { Users, Plus, Edit, Trash2, Mail, Phone, CreditCard, Search } from "lucide-react";
 import PagadorModal from "../components/PagadorModal";
+import { Pagination } from "../components/Pagination";
+import { PageListSkeleton } from "../components/LoadingSkeletons";
+import { usePagination } from "../hooks/usePagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,16 +32,18 @@ import {
   AlertDialogTitle,
 } from "../components/dashboard.ui/alert-dialog";
 
+const ITEMS_PER_PAGE = 9;
+
 export default function Pagadores() {
+  const { selectedDate } = useOutletContext();
+  
   const [pagadores, setPagadores] = useState([]);
-  const [filteredPagadores, setFilteredPagadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPagador, setEditingPagador] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pagadorToDelete, setPagadorToDelete] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
 
   const estabelecimento = authService.getEstabelecimento();
 
@@ -36,22 +51,23 @@ export default function Pagadores() {
     carregarPagadores();
   }, []);
 
-  const handleDateChange = useCallback((date) => {
-    setSelectedDate(date);
-  }, []);
+  // Filtrar pagadores
+  const filteredPagadores = useMemo(() => {
+    if (!searchTerm) return pagadores;
+    
+    const term = searchTerm.toLowerCase();
+    return pagadores.filter((p) =>
+      p.nome.toLowerCase().includes(term) ||
+      p.cpf?.includes(searchTerm) ||
+      p.email?.toLowerCase().includes(term)
+    );
+  }, [pagadores, searchTerm]);
 
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = pagadores.filter((p) =>
-        p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.cpf?.includes(searchTerm) ||
-        p.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredPagadores(filtered);
-    } else {
-      setFilteredPagadores(pagadores);
-    }
-  }, [searchTerm, pagadores]);
+  // Hook de paginação
+  const pagination = usePagination({
+    items: filteredPagadores,
+    itemsPerPage: ITEMS_PER_PAGE,
+  });
 
   const carregarPagadores = async () => {
     try {
@@ -61,7 +77,6 @@ export default function Pagadores() {
         (p) => p.id_estabelecimento === estabelecimento?.id_estabelecimento
       );
       setPagadores(pagadoresDoEstabelecimento);
-      setFilteredPagadores(pagadoresDoEstabelecimento);
     } catch (err) {
       console.error("Erro ao carregar pagadores:", err);
       toast.error("Erro ao carregar pagadores");
@@ -103,39 +118,43 @@ export default function Pagadores() {
     await carregarPagadores();
   };
 
-  const totalPagadores = pagadores.length;
-  const pagadoresAtivos = pagadores.filter((p) => {
-    const usedDate = selectedDate || new Date()
-
-    usedDate.setMonth(usedDate.getMonth() - 1);
-    return new Date(p.createdAt) > usedDate;
-  }).length;
+  // Estatísticas
+  const stats = useMemo(() => {
+    const usedDate = selectedDate || new Date();
+    const oneMonthAgo = new Date(usedDate);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    const pagadoresAtivos = pagadores.filter((p) => new Date(p.createdAt) > oneMonthAgo).length;
+    
+    return {
+      total: pagadores.length,
+      ativos: pagadoresAtivos,
+      inativos: pagadores.length - pagadoresAtivos,
+    };
+  }, [pagadores, selectedDate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Carregando...</div>
-      </div>
-    );
+    return <PageListSkeleton statsCount={3} itemsCount={6} />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
-      <div className="absolute inset-0 bg-gradient-radial from-orange-500/20 via-transparent to-transparent opacity-50 blur-3xl pointer-events-none" />
-      
-      <DashboardSideBar onDateChange={handleDateChange} />
-
-      <div className="flex-1 p-6 relative">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Gerenciar Pagadores</h1>
-              <p className="text-slate-400">Cadastre e gerencie as pessoas que pagam mensalidades</p>
-            </div>
+    <div className="p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6 pb-20">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">
+              Gerenciar Pagadores
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base">
+              Cadastre e gerencie as pessoas que pagam mensalidades
+            </p>
           </div>
+        </div>
 
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm card-enter">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">
                 Total de Pagadores
@@ -143,11 +162,11 @@ export default function Pagadores() {
               <Users className="h-4 w-4 text-slate-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{totalPagadores}</div>
+              <div className="text-2xl font-bold text-white tabular-nums">{stats.total}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm card-enter" style={{ animationDelay: '50ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">
                 Cadastrados este Mês
@@ -155,11 +174,11 @@ export default function Pagadores() {
               <Users className="h-4 w-4 text-emerald-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-emerald-400">{pagadoresAtivos}</div>
+              <div className="text-2xl font-bold text-emerald-400 tabular-nums">{stats.ativos}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm card-enter" style={{ animationDelay: '100ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">
                 Inativos
@@ -167,13 +186,12 @@ export default function Pagadores() {
               <Users className="h-4 w-4 text-slate-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-slate-500">
-                {totalPagadores - pagadoresAtivos}
-              </div>
+              <div className="text-2xl font-bold text-slate-500 tabular-nums">{stats.inativos}</div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Search */}
         <div className="flex gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -186,6 +204,7 @@ export default function Pagadores() {
           </div>
         </div>
 
+        {/* Content */}
         {filteredPagadores.length === 0 ? (
           <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -210,68 +229,87 @@ export default function Pagadores() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPagadores.map((pagador) => (
-              <Card
-                key={pagador.id_pagador}
-                className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:border-orange-500/50 transition-all"
-              >
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center justify-between">
-                    <span className="truncate">{pagador.nome}</span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditPagador(pagador)}
-                        className="text-slate-400 hover:text-orange-400"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteClick(pagador)}
-                        className="text-slate-400 hover:text-red-400"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {pagador.cpf && (
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <CreditCard className="h-4 w-4" />
-                      <span className="text-sm">{pagador.cpf}</span>
-                    </div>
-                  )}
-                  {pagador.telefone && (
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Phone className="h-4 w-4" />
-                      <span className="text-sm">{pagador.telefone}</span>
-                    </div>
-                  )}
-                  {pagador.email && (
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Mail className="h-4 w-4" />
-                      <span className="text-sm truncate">{pagador.email}</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pagination.paginatedItems.map((pagador, index) => (
+                <Card
+                  key={pagador.id_pagador}
+                  className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:border-orange-500/50 transition-all card-enter"
+                  style={{ animationDelay: `${index * 30}ms` }}
+                >
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center justify-between">
+                      <span className="truncate">{pagador.nome}</span>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditPagador(pagador)}
+                          className="text-slate-400 hover:text-orange-400"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteClick(pagador)}
+                          className="text-slate-400 hover:text-red-400"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {pagador.cpf && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <CreditCard className="h-4 w-4" />
+                        <span className="text-sm">{pagador.cpf}</span>
+                      </div>
+                    )}
+                    {pagador.telefone && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Phone className="h-4 w-4" />
+                        <span className="text-sm">{pagador.telefone}</span>
+                      </div>
+                    )}
+                    {pagador.email && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Mail className="h-4 w-4" />
+                        <span className="text-sm truncate">{pagador.email}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Paginação */}
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              startIndex={pagination.startIndex}
+              endIndex={pagination.endIndex}
+              totalItems={filteredPagadores.length}
+              canGoNext={pagination.canGoNext}
+              canGoPrev={pagination.canGoPrev}
+              onNext={pagination.goToNextPage}
+              onPrev={pagination.goToPrevPage}
+              itemLabel="pagadores"
+            />
+          </>
         )}
       </div>
 
+      {/* FAB */}
       <Button
         onClick={handleAddPagador}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-transform hover:scale-105"
       >
         <Plus className="h-6 w-6" />
       </Button>
 
+      {/* Modals */}
       <PagadorModal
         open={modalOpen}
         onOpenChange={setModalOpen}
@@ -301,7 +339,6 @@ export default function Pagadores() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
     </div>
   );
 }

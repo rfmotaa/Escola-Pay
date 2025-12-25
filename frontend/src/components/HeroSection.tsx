@@ -47,7 +47,7 @@ export function HeroSection() {
           </div>
 
           {/* Estatísticas */}
-          <div className="flex justify-center gap-12 pt-8">
+          {<div className="flex justify-center gap-12 pt-8">
             <div>
               <div className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-1">+500</div>
               <div className="text-slate-200">Escolas cadastradas</div>
@@ -60,7 +60,7 @@ export function HeroSection() {
               <div className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-1">98%</div>
               <div className="text-slate-200">Satisfação</div>
             </div>
-          </div>
+          </div>}
         </div>
       </div>
     </section>

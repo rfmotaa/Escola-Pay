@@ -7,14 +7,16 @@ import mensalidade from "./mensalidadeRoutes.js";
 import pagador from "./pagadorRoutes.js";
 import itemCompra from "./itemCompraRoutes.js";
 
-const routes = express.Router()
+const routes = express.Router();
 
-routes.route("/").get((req, res)=> res.status(200).send("Its home"));
-routes.use(express.json(), usuario);
-routes.use(express.json(), compra);
-routes.use(express.json(), estabelecimento);
-routes.use(express.json(), mensalidade);
-routes.use(express.json(), pagador);
-routes.use(express.json(), itemCompra);
+routes.route("/").get((req, res) => res.status(200).send("Its home"));
+
+// express.json() is already applied globally in server.js
+routes.use(usuario);
+routes.use(compra);
+routes.use(estabelecimento);
+routes.use(mensalidade);
+routes.use(pagador);
+routes.use(itemCompra);
 
 export default routes;

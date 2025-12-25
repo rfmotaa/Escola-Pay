@@ -10,6 +10,7 @@ import Mensalidades from './pages/Mensalidades';
 import Compras from './pages/Compras';
 import EditarEstabelecimento from './pages/EditarEstabelecimento';
 import RotaProtegida from './components/RotaProtegida';
+import DashboardLayout from './components/DashboardLayout';
 
 function App() {
   return (
@@ -23,46 +24,22 @@ function App() {
             <OnboardingEstabelecimento />
           </RotaProtegida>
         } />
+        
+        {/* Dashboard routes with shared layout */}
         <Route
           path="/dashboard"
           element={
             <RotaProtegida requireEstabelecimento={true}>
-              <Dashboard />
+              <DashboardLayout />
             </RotaProtegida>
           }
-        />
-        <Route
-          path="/dashboard/pagadores"
-          element={
-            <RotaProtegida requireEstabelecimento={true}>
-              <Pagadores />
-            </RotaProtegida>
-          }
-        />
-        <Route
-          path="/dashboard/mensalidades"
-          element={
-            <RotaProtegida requireEstabelecimento={true}>
-              <Mensalidades />
-            </RotaProtegida>
-          }
-        />
-        <Route
-          path="/dashboard/compras"
-          element={
-            <RotaProtegida requireEstabelecimento={true}>
-              <Compras />
-            </RotaProtegida>
-          }
-        />
-        <Route
-          path="/dashboard/estabelecimento"
-          element={
-            <RotaProtegida requireEstabelecimento={true}>
-              <EditarEstabelecimento />
-            </RotaProtegida>
-          }
-        />
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="pagadores" element={<Pagadores />} />
+          <Route path="mensalidades" element={<Mensalidades />} />
+          <Route path="compras" element={<Compras />} />
+          <Route path="estabelecimento" element={<EditarEstabelecimento />} />
+        </Route>
       </Routes>
       <Toaster />
     </BrowserRouter>

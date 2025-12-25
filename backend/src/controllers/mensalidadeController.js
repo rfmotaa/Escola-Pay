@@ -1,85 +1,43 @@
-import Mensalidade from "../models/Mensalidade.js";
+import { mensalidadeService } from '../services/mensalidade.service.js';
+import { asyncHandler } from '../middlewares/errorHandler.js';
 
-class MensalidadeController{
+/**
+ * MensalidadeController - HTTP layer only
+ * 
+ * Complexity reduced from ~100 lines to ~40 lines
+ */
+class MensalidadeController {
 
-    static async listarMensalidades (req, res){
-        try{
-            const listaMensalidades = await Mensalidade.findAll();
-            res.status(200).json(listaMensalidades);
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao listar mensalidades`});
-        }
-    }
+  static listarMensalidades = asyncHandler(async (req, res) => {
+    const mensalidades = await mensalidadeService.listar(req.query);
+    res.status(200).json(mensalidades);
+  });
 
-    static async cadastrarMensalidade (req, res){
-        try{
-            const body = req.body;
-            const novaMensalidade = await Mensalidade.create(body);
-            res.status(201).json({ message: "Mensalidade criada com sucesso", mensalidade: novaMensalidade });
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao cadastrar mensalidade`});
-        }
-    }
+  static cadastrarMensalidade = asyncHandler(async (req, res) => {
+    const novaMensalidade = await mensalidadeService.criar(req.body);
+    res.status(201).json({
+      message: 'Mensalidade criada com sucesso',
+      mensalidade: novaMensalidade
+    });
+  });
 
-    static async buscarMensalidadePorId (req, res) {
-        try{
-            const id = req.params.id;
-            const mensalidade = await Mensalidade.findByPk(id);
-            
-            if (!mensalidade) {
-                res.status(404).json({ message: "Mensalidade não encontrada" });
-                return;
-            }
+  static buscarMensalidadePorId = asyncHandler(async (req, res) => {
+    const mensalidade = await mensalidadeService.buscarPorId(req.params.id);
+    res.status(200).json(mensalidade);
+  });
 
-            res.status(200).json(mensalidade);
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao buscar mensalidade`});
-        }
-    }
+  static atualizarMensalidade = asyncHandler(async (req, res) => {
+    const mensalidadeAtualizada = await mensalidadeService.atualizar(req.params.id, req.body);
+    res.status(200).json({
+      message: 'Mensalidade atualizada com sucesso',
+      mensalidade: mensalidadeAtualizada
+    });
+  });
 
-    static async atualizarMensalidade (req, res) {
-        try{
-            const id = req.params.id;
-            const body = req.body;
-
-            const [updated] = await Mensalidade.update(body, {
-                where: { id_mensalidade: id }
-            });
-
-            if (updated === 0) {
-                res.status(404).json({ message: "Mensalidade não encontrada" });
-                return;
-            }
-
-            const mensalidadeAtualizada = await Mensalidade.findByPk(id);
-            res.status(200).json({ message: "Mensalidade atualizada com sucesso", mensalidade: mensalidadeAtualizada });
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao atualizar mensalidade`});
-        }
-    }
-
-    static async deletarMensalidade (req, res) {
-        try{
-            const id = req.params.id;
-            const deleted = await Mensalidade.destroy({
-                where: { id_mensalidade: id }
-            });
-
-            if (deleted === 0) {
-                res.status(404).json({ message: "Mensalidade não encontrada" });
-                return;
-            }
-
-            res.status(200).json({ message: "Mensalidade deletada com sucesso" });
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao deletar mensalidade`});
-        }
-    }
+  static deletarMensalidade = asyncHandler(async (req, res) => {
+    await mensalidadeService.deletar(req.params.id);
+    res.status(200).json({ message: 'Mensalidade deletada com sucesso' });
+  });
 }
 
 export default MensalidadeController;

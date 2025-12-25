@@ -34,31 +34,30 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
       if (selectedDate) {
         dateSelected = selectedDate
       }
-      const currentMonth = dateSelected.getMonth();
+      const currentMonth = dateSelected.getMonth() + 1; // API espera mês 1-12
       const currentYear = dateSelected.getFullYear();
 
+      // Buscar dados já filtrados por estabelecimento e mês/ano
       const [mensalidadesData, comprasData, pagadoresData] = await Promise.all([
-        mensalidadeService.listar(),
-        compraService.listar(),
+        mensalidadeService.listar({
+          id_estabelecimento: estabelecimento?.id_estabelecimento,
+          mes: currentMonth,
+          ano: currentYear
+        }),
+        compraService.listar({
+          id_estabelecimento: estabelecimento?.id_estabelecimento,
+          mes: currentMonth,
+          ano: currentYear
+        }),
         pagadorService.listar(),
       ]);
-
-      const mensalidadesDoMes = mensalidadesData.filter((m: any) => {
-        const date = new Date(m.data_vencimento);
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      });
-
-      const comprasDoMes = comprasData.filter((c: any) => {
-        const date = new Date(c.data_compra);
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      });
 
       const pagadoresDoEstabelecimento = pagadoresData.filter(
         (p: any) => p.id_estabelecimento === estabelecimento?.id_estabelecimento
       );
 
-      const mensalidadesPendentes = mensalidadesDoMes.filter(
-        (m: any) => m.status === "pendente" || m.status === "atrasada"
+      const mensalidadesPendentes = mensalidadesData.filter(
+        (m: any) => m.status === "pendente" || m.status === "atrasada" || m.status === "atrasado"
       );
 
       const totalReceber = mensalidadesPendentes.reduce(
@@ -66,7 +65,7 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
         0
       );
 
-      const gastoTotal = comprasDoMes.reduce(
+      const gastoTotal = comprasData.reduce(
         (sum: number, c: any) => sum + parseFloat(c.valor_total || 0),
         0
       );
@@ -75,7 +74,7 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
         totalPagadores: pagadoresDoEstabelecimento.length,
         mensalidadesPendentesMes: mensalidadesPendentes.length,
         totalReceberMes: totalReceber,
-        comprasMes: comprasDoMes.length,
+        comprasMes: comprasData.length,
         gastoTotalMes: gastoTotal,
         estabelecimentoNome: estabelecimento?.nome || "Meu Estabelecimento",
       });
@@ -91,30 +90,79 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
-  const currentDate = new Date();
+  const displayDate = selectedDate || new Date();
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="text-slate-400 mt-4">Carregando dados...</p>
+        {/* Header skeleton */}
+        <div>
+          <div className="skeleton h-8 w-48 rounded mb-2" />
+          <div className="skeleton h-4 w-64 rounded" />
+        </div>
+
+        {/* Stats cards skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="skeleton h-4 w-24 rounded" />
+                <div className="skeleton h-4 w-4 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <div className="skeleton h-8 w-20 rounded mb-2" />
+                <div className="skeleton h-3 w-16 rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Second row skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="skeleton h-4 w-24 rounded" />
+                <div className="skeleton h-4 w-4 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <div className="skeleton h-8 w-20 rounded mb-2" />
+                <div className="skeleton h-3 w-16 rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick actions skeleton */}
+        <div>
+          <div className="skeleton h-6 w-32 rounded mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="skeleton h-12 w-12 rounded-lg mb-4" />
+                  <div className="skeleton h-5 w-32 rounded mb-2" />
+                  <div className="skeleton h-4 w-40 rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-transition">
       <div>
         <h2 className="text-white text-2xl font-semibold">Visão Geral</h2>
         <p className="text-slate-400 mt-1">
-          Resumo financeiro de {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          Resumo financeiro de {monthNames[displayDate.getMonth()]} {displayDate.getFullYear()}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm card-enter hover:border-slate-600 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Total de Pagadores
@@ -122,12 +170,12 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
             <Users className="h-4 w-4 text-slate-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.totalPagadores}</div>
+            <div className="text-2xl font-bold text-white tabular-nums">{stats.totalPagadores}</div>
             <p className="text-xs text-slate-500 mt-1">Cadastrados no sistema</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm card-enter hover:border-amber-500/30 transition-colors" style={{ animationDelay: '50ms' }}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Mensalidades Pendentes
@@ -135,12 +183,12 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
             <AlertCircle className="h-4 w-4 text-amber-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-400">{stats.mensalidadesPendentesMes}</div>
+            <div className="text-2xl font-bold text-amber-400 tabular-nums">{stats.mensalidadesPendentesMes}</div>
             <p className="text-xs text-slate-500 mt-1">Este mês</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm card-enter hover:border-emerald-500/30 transition-colors" style={{ animationDelay: '100ms' }}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Total a Receber
@@ -148,7 +196,7 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
             <DollarSign className="h-4 w-4 text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-400">
+            <div className="text-2xl font-bold text-emerald-400 tabular-nums">
               R$ {stats.totalReceberMes.toFixed(2)}
             </div>
             <p className="text-xs text-slate-500 mt-1">Este mês</p>
@@ -157,7 +205,7 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm card-enter hover:border-slate-600 transition-colors" style={{ animationDelay: '150ms' }}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Compras Realizadas
@@ -165,12 +213,12 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
             <ShoppingCart className="h-4 w-4 text-slate-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.comprasMes}</div>
+            <div className="text-2xl font-bold text-white tabular-nums">{stats.comprasMes}</div>
             <p className="text-xs text-slate-500 mt-1">Este mês</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm card-enter hover:border-red-500/30 transition-colors" style={{ animationDelay: '200ms' }}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Gasto Total
@@ -178,14 +226,14 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
             <TrendingDown className="h-4 w-4 text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-400">
+            <div className="text-2xl font-bold text-red-400 tabular-nums">
               R$ {stats.gastoTotalMes.toFixed(2)}
             </div>
             <p className="text-xs text-slate-500 mt-1">Este mês</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0">
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 card-enter" style={{ animationDelay: '250ms' }}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-white">
               Estabelecimento
@@ -205,7 +253,8 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
         <h3 className="text-white text-lg font-semibold mb-4">Ações Rápidas</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card 
-            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group"
+            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group card-enter"
+            style={{ animationDelay: '300ms' }}
             onClick={() => navigate("/dashboard/mensalidades")}
           >
             <CardContent className="p-6">
@@ -221,7 +270,8 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
           </Card>
 
           <Card 
-            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group"
+            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group card-enter"
+            style={{ animationDelay: '350ms' }}
             onClick={() => navigate("/dashboard/pagadores")}
           >
             <CardContent className="p-6">
@@ -237,7 +287,8 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
           </Card>
 
           <Card 
-            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group"
+            className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all cursor-pointer group card-enter"
+            style={{ animationDelay: '400ms' }}
             onClick={() => navigate("/dashboard/compras")}
           >
             <CardContent className="p-6">
@@ -255,7 +306,7 @@ export function DashboardView({ selectedDate }: { selectedDate: Date }) {
       </div>
 
       {stats.mensalidadesPendentesMes > 0 && (
-        <Card className="bg-amber-500/10 border-amber-500/30 backdrop-blur-sm">
+        <Card className="bg-amber-500/10 border-amber-500/30 backdrop-blur-sm card-enter" style={{ animationDelay: '450ms' }}>
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-6 h-6 text-amber-400 mt-1 flex-shrink-0" />

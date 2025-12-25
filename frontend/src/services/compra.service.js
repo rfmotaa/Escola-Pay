@@ -1,8 +1,15 @@
 import api from './api';
 
 export const compraService = {
-  async listar() {
-    const response = await api.get('/compras');
+  async listar(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.id_estabelecimento) queryParams.append('id_estabelecimento', params.id_estabelecimento);
+    if (params.mes) queryParams.append('mes', params.mes);
+    if (params.ano) queryParams.append('ano', params.ano);
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/compras?${queryString}` : '/compras';
+    const response = await api.get(url);
     return response.data;
   },
 

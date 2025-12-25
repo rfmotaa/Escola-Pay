@@ -1,1 +1,120 @@
 @import "tailwindcss";
+
+/**
+ * Transições de página para navegação fluida
+ * Respeita prefers-reduced-motion para acessibilidade
+ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-transition {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.page-enter {
+  animation: pageEnter 0.25s ease-out forwards;
+}
+
+/* Respeita preferência do usuário por menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .page-transition,
+  .page-enter,
+  .card-enter {
+    animation: none;
+  }
+}
+
+/**
+ * Transições suaves para cards e elementos interativos
+ */
+.card-enter {
+  animation: cardEnter 0.2s ease-out forwards;
+  animation-fill-mode: both;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/**
+ * Animação de pulso suave para valores que mudam
+ */
+@keyframes valueUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.value-update {
+  animation: valueUpdate 0.3s ease-out;
+}
+
+/**
+ * Loading skeleton animation
+ */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/**
+ * Transição suave para mudança de conteúdo
+ */
+.content-fade {
+  transition: opacity 0.15s ease-out;
+}
+
+.content-fade.loading {
+  opacity: 0.6;
+}

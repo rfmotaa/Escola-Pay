@@ -1,6 +1,13 @@
+/**
+ * @fileoverview Página de Edição do Estabelecimento refatorada
+ * 
+ * Melhorias:
+ * - Usa layout compartilhado
+ * - Loading state melhorado
+ */
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "../components/Sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/dashboard.ui/card";
 import { Button } from "../components/dashboard.ui/button";
 import { Input } from "../components/dashboard.ui/input";
@@ -38,7 +45,6 @@ export default function EditarEstabelecimento() {
         return;
       }
 
-      // Buscar dados atualizados do estabelecimento
       const estabelecimentos = await estabelecimentoService.listarDoUsuario(usuario?.id_usuario);
       const estabelecimentoAtual = estabelecimentos.find(
         (e) => e.id_estabelecimento === estabelecimento.id_estabelecimento
@@ -85,7 +91,6 @@ export default function EditarEstabelecimento() {
         nome_estabelecimento: formData.nome_estabelecimento,
       });
 
-      // Atualizar localStorage
       const estabelecimentoAtualizado = {
         ...estabelecimento,
         nome_estabelecimento: formData.nome_estabelecimento,
@@ -107,7 +112,7 @@ export default function EditarEstabelecimento() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-orange-500 mx-auto mb-4" />
           <p className="text-slate-400">Carregando dados...</p>
@@ -117,19 +122,14 @@ export default function EditarEstabelecimento() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
-      <div className="absolute inset-0 bg-gradient-radial from-orange-500/20 via-transparent to-transparent opacity-50 blur-3xl pointer-events-none" />
-      
-      <Sidebar />
-      
-      <div className="flex-1 p-8 relative">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-white mb-2">Meu Estabelecimento</h1>
-            <p className="text-slate-400">Gerencie as informações do seu estabelecimento</p>
-          </div>
+    <div className="p-4 md:p-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white mb-2">Meu Estabelecimento</h1>
+          <p className="text-slate-400">Gerencie as informações do seu estabelecimento</p>
+        </div>
 
-        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm card-enter">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg">
@@ -239,7 +239,7 @@ export default function EditarEstabelecimento() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6 bg-slate-800/30 border-slate-700/30 backdrop-blur-sm">
+        <Card className="mt-6 bg-slate-800/30 border-slate-700/30 backdrop-blur-sm card-enter" style={{ animationDelay: '100ms' }}>
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
@@ -254,7 +254,6 @@ export default function EditarEstabelecimento() {
             </div>
           </CardContent>
         </Card>
-        </div>
       </div>
     </div>
   );

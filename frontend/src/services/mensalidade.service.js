@@ -1,8 +1,15 @@
 import api from './api';
 
 export const mensalidadeService = {
-  async listar() {
-    const response = await api.get('/mensalidades');
+  async listar(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.id_estabelecimento) queryParams.append('id_estabelecimento', params.id_estabelecimento);
+    if (params.mes) queryParams.append('mes', params.mes);
+    if (params.ano) queryParams.append('ano', params.ano);
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/mensalidades?${queryString}` : '/mensalidades';
+    const response = await api.get(url);
     return response.data;
   },
 

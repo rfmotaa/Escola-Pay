@@ -3,7 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './src/config/swagger.config.js';
-import routes from './src/routes/index.js'
+import routes from './src/routes/index.js';
+import { errorHandler, notFoundHandler } from './src/middlewares/errorHandler.js';
 
 import { conectarBanco } from './src/config/database.js';
 import { verifySalt } from './src/config/crypto.js';
@@ -12,7 +13,7 @@ import './src/models/index.js';
 
 dotenv.config();
 
-const PORT  = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 await verifySalt();
 await conectarBanco();
@@ -20,19 +21,25 @@ await popularBanco();
 
 const app = express();
 
-app.use(cors()); 
+// Middlewares
+app.use(cors());
 app.use(express.json());
 
+// Routes
 app.use('/api/v1', routes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/', (req, res) => {
-	res.status(200).json({ 
+	res.status(200).json({
 		message: 'Bem-vindo à API SchoolManager!',
-		docs: '/api-docs' 
+		docs: '/api-docs'
 	});
 });
 
-app.listen(PORT,  ()=>{
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📚 Documentação da API disponível em http://localhost:${PORT}/api-docs`);
+// Error handling (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+	console.log(`🚀 Servidor rodando na porta ${PORT}`);
+	console.log(`📚 Documentação da API disponível em http://localhost:${PORT}/api-docs`);
 });

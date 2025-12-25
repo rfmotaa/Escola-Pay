@@ -12,61 +12,69 @@ import { Card, CardContent } from "./dashboard.ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart } from "lucide-react";
 
+const INITIAL_FORM = {
+  nome_compra: "",
+  categoria: "outros",
+  data_compra: new Date().toISOString().split('T')[0],
+  descricao: "",
+};
+
+const INITIAL_ITEM = {
+  nome_item: "",
+  quantidade: "",
+  preco_unitario: "",
+};
+
 export default function CompraModal({ open, onOpenChange, compra, onSave }) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    nome_compra: "",
-    categoria: "outros",
-    data_compra: new Date().toISOString().split('T')[0],
-    descricao: "",
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM);
   const [itens, setItens] = useState([]);
-  const [novoItem, setNovoItem] = useState({
-    nome_item: "",
-    quantidade: "",
-    preco_unitario: "",
-  });
-
-  const estabelecimento = authService.getEstabelecimento();
+  const [novoItem, setNovoItem] = useState(INITIAL_ITEM);
 
   useEffect(() => {
-    if (open) {
-      if (compra) {
-        setFormData({
-          nome_compra: compra.nome_compra || "",
-          categoria: compra.categoria || "outros",
-          data_compra: compra.data_compra?.split('T')[0] || new Date().toISOString().split('T')[0],
-          descricao: compra.descricao || "",
-        });
-        carregarItens(compra.id_compra);
-        setStep(2);
-      } else {
-        setFormData({
-          nome_compra: "",
-          categoria: "outros",
-          data_compra: new Date().toISOString().split('T')[0],
-          descricao: "",
-        });
-        setItens([]);
-        setStep(1);
-      }
-      setNovoItem({
-        nome_item: "",
-        quantidade: "",
-        preco_unitario: "",
+    if (!open) return;
+    
+    if (compra) {
+      setFormData({
+        nome_compra: compra.nome_compra || "",
+        categoria: compra.categoria || "outros",
+        data_compra: compra.data_compra?.split('T')[0] || INITIAL_FORM.data_compra,
+        descricao: compra.descricao || "",
       });
+      carregarItens(compra.id_compra);
+      setStep(2);
+    } else {
+      setFormData(INITIAL_FORM);
+      setItens([]);
+      setStep(1);
     }
+    setNovoItem(INITIAL_ITEM);
   }, [open, compra]);
 
   const carregarItens = async (id_compra) => {
     try {
       const data = await itemCompraService.listar(id_compra);
-      setItens(data || []);
+      // Mapear os dados do backend para o formato do frontend
+      const itensFormatados = (data || []).map(item => ({
+        id_item: item.id_item_compra,
+        nome_item: item.nome_produto,
+        quantidade: parseFloat(item.quantidade),
+        preco_unitario: parseFloat(item.valor_unitario),
+        preco_total: parseFloat(item.valor_total),
+      }));
+      setItens(itensFormatados);
     } catch (err) {
-      console.error("Erro ao carregar itens:", err);
       setItens([]);
     }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleItemChange = (e) => {
+    setNovoItem({ ...novoItem, [e.target.name]: e.target.value });
   };
 
   const handleNextStep = () => {
@@ -78,46 +86,38 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
   };
 
   const handleAdicionarItem = () => {
-    if (!novoItem.nome_item.trim()) {
-      toast.error("Nome do item é obrigatório");
+    if (!novoItem.nome_item.trim() || !novoItem.quantidade || !novoItem.preco_unitario) {
+      toast.error("Preencha todos os campos do item");
       return;
     }
 
-    if (!novoItem.quantidade || parseFloat(novoItem.quantidade) <= 0) {
-      toast.error("Quantidade inválida");
+    const qtd = parseFloat(novoItem.quantidade);
+    const preco = parseFloat(novoItem.preco_unitario);
+
+    if (qtd <= 0 || preco <= 0) {
+      toast.error("Quantidade e preço devem ser maiores que zero");
       return;
     }
 
-    if (!novoItem.preco_unitario || parseFloat(novoItem.preco_unitario) <= 0) {
-      toast.error("Preço unitário inválido");
-      return;
-    }
-
-    const item = {
+    setItens([...itens, {
       nome_item: novoItem.nome_item,
-      quantidade: parseFloat(novoItem.quantidade),
-      preco_unitario: parseFloat(novoItem.preco_unitario),
-      preco_total: parseFloat(novoItem.quantidade) * parseFloat(novoItem.preco_unitario),
+      quantidade: qtd,
+      preco_unitario: preco,
+      preco_total: qtd * preco,
       id_temp: Date.now(),
-    };
-
-    setItens([...itens, item]);
-    setNovoItem({
-      nome_item: "",
-      quantidade: "",
-      preco_unitario: "",
-    });
+    }]);
+    
+    setNovoItem(INITIAL_ITEM);
     toast.success("Item adicionado!");
   };
 
   const handleRemoverItem = (index) => {
-    const novosItens = itens.filter((_, i) => i !== index);
-    setItens(novosItens);
+    setItens(itens.filter((_, i) => i !== index));
     toast.success("Item removido!");
   };
 
   const calcularValorTotal = () => {
-    return itens.reduce((sum, item) => sum + (item.preco_total || 0), 0);
+    return itens.reduce((sum, item) => sum + item.preco_total, 0);
   };
 
   const handleSubmit = async () => {
@@ -126,60 +126,41 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
       return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-
-      const valorTotal = calcularValorTotal();
-
       const dadosCompra = {
-        id_estabelecimento: estabelecimento?.id_estabelecimento,
+        ...formData,
+        id_estabelecimento: authService.getEstabelecimento()?.id_estabelecimento,
         id_usuario_responsavel: authService.getUsuarioLogado()?.id_usuario,
-        nome_compra: formData.nome_compra,
-        categoria: formData.categoria,
-        data_compra: formData.data_compra,
-        descricao: formData.descricao,
-        valor_total: valorTotal,
+        valor_total: calcularValorTotal(),
       };
 
-      let compraId;
+      const compraId = compra 
+        ? (await compraService.atualizar(compra.id_compra, dadosCompra), compra.id_compra)
+        : (await compraService.criar(dadosCompra)).compra.id_compra;
 
-      if (compra) {
-        await compraService.atualizar(compra.id_compra, dadosCompra);
-        compraId = compra.id_compra;
-        toast.success("Compra atualizada!");
-      } else {
-        const response = await compraService.criar(dadosCompra);
-        compraId = response.compra.id_compra;
-        toast.success("Compra criada!");
+      for (const item of itens.filter(i => !i.id_item)) {
+        await itemCompraService.criar(compraId, {
+          nome_produto: item.nome_item,
+          quantidade: item.quantidade,
+          valor_unitario: item.preco_unitario,
+          valor_total: item.preco_total,
+        });
       }
 
-      for (const item of itens) {
-        if (!item.id_item) {
-          await itemCompraService.criar(compraId, {
-            nome_produto: item.nome_item,
-            quantidade: item.quantidade,
-            valor_unitario: item.preco_unitario,
-            valor_total: item.preco_total,
-          });
-        }
-      }
-
+      toast.success(compra ? "Compra atualizada!" : "Compra criada!");
       onSave();
       onOpenChange(false);
     } catch (err) {
-      console.error("Erro ao salvar compra:", err);
       toast.error(err.response?.data?.message || "Erro ao salvar compra");
     } finally {
       setLoading(false);
     }
   };
 
-  const calcularPrecoTotal = () => {
-    if (novoItem.quantidade && novoItem.preco_unitario) {
-      return (parseFloat(novoItem.quantidade) * parseFloat(novoItem.preco_unitario)).toFixed(2);
-    }
-    return "0.00";
-  };
+  const precoTotalItem = novoItem.quantidade && novoItem.preco_unitario
+    ? (parseFloat(novoItem.quantidade) * parseFloat(novoItem.preco_unitario)).toFixed(2)
+    : "0.00";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -196,15 +177,13 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
         {step === 1 ? (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="nome_compra" className="text-white">
-                Nome da Compra *
-              </Label>
+              <Label htmlFor="nome_compra" className="text-white">Nome da Compra *</Label>
               <Input
                 id="nome_compra"
-                type="text"
+                name="nome_compra"
                 placeholder="Ex: Compra no Supermercado"
                 value={formData.nome_compra}
-                onChange={(e) => setFormData({ ...formData, nome_compra: e.target.value })}
+                onChange={handleChange}
                 className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                 disabled={loading}
                 required
@@ -212,9 +191,7 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
             </div>
 
             <div>
-              <Label htmlFor="categoria" className="text-white">
-                Categoria *
-              </Label>
+              <Label htmlFor="categoria" className="text-white">Categoria *</Label>
               <Select
                 value={formData.categoria}
                 onValueChange={(value) => setFormData({ ...formData, categoria: value })}
@@ -234,14 +211,13 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
             </div>
 
             <div>
-              <Label htmlFor="data_compra" className="text-white">
-                Data da Compra *
-              </Label>
+              <Label htmlFor="data_compra" className="text-white">Data da Compra *</Label>
               <Input
                 id="data_compra"
+                name="data_compra"
                 type="date"
                 value={formData.data_compra}
-                onChange={(e) => setFormData({ ...formData, data_compra: e.target.value })}
+                onChange={handleChange}
                 className="bg-slate-900/50 border-slate-600 text-white"
                 disabled={loading}
                 required
@@ -249,14 +225,13 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
             </div>
 
             <div>
-              <Label htmlFor="descricao" className="text-white">
-                Descrição
-              </Label>
+              <Label htmlFor="descricao" className="text-white">Descrição</Label>
               <Textarea
                 id="descricao"
+                name="descricao"
                 placeholder="Observações adicionais..."
                 value={formData.descricao}
-                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                onChange={handleChange}
                 className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500 min-h-20"
                 disabled={loading}
               />
@@ -332,8 +307,9 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
                   
                   <Input
                     placeholder="Nome do item *"
+                    name="nome_item"
                     value={novoItem.nome_item}
-                    onChange={(e) => setNovoItem({ ...novoItem, nome_item: e.target.value })}
+                    onChange={handleItemChange}
                     className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                   />
 
@@ -341,24 +317,26 @@ export default function CompraModal({ open, onOpenChange, compra, onSave }) {
                     <Input
                       type="number"
                       step="0.01"
+                      name="quantidade"
                       placeholder="Quantidade *"
                       value={novoItem.quantidade}
-                      onChange={(e) => setNovoItem({ ...novoItem, quantidade: e.target.value })}
+                      onChange={handleItemChange}
                       className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                     />
                     <Input
                       type="number"
                       step="0.01"
+                      name="preco_unitario"
                       placeholder="Preço unit. *"
                       value={novoItem.preco_unitario}
-                      onChange={(e) => setNovoItem({ ...novoItem, preco_unitario: e.target.value })}
+                      onChange={handleItemChange}
                       className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                     />
                   </div>
 
                   {(novoItem.quantidade && novoItem.preco_unitario) && (
                     <p className="text-sm text-slate-400">
-                      Total do item: <span className="text-orange-400 font-semibold">R$ {calcularPrecoTotal()}</span>
+                      Total do item: <span className="text-orange-400 font-semibold">R$ {precoTotalItem}</span>
                     </p>
                   )}
 

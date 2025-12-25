@@ -1,85 +1,47 @@
-import Compra from "../models/Compra.js";
+import { compraService } from '../services/compra.service.js';
+import { asyncHandler } from '../middlewares/errorHandler.js';
 
-class CompraController{
+/**
+ * CompraController - Handles HTTP layer only
+ * Business logic delegated to CompraService
+ * 
+ * Complexity reduced from ~100 lines to ~40 lines
+ * - Removed try-catch blocks (handled by asyncHandler)
+ * - Removed business logic (moved to service)
+ * - Single responsibility: HTTP handling only
+ */
+class CompraController {
 
-    static async listarCompras (req, res){
-        try{
-            const listaCompras = await Compra.findAll();
-            res.status(200).json(listaCompras);
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao listar compras`});
-        }
-    }
+  static listarCompras = asyncHandler(async (req, res) => {
+    const compras = await compraService.listar(req.query);
+    res.status(200).json(compras);
+  });
 
-    static async cadastrarCompra (req, res){
-        try{
-            const body = req.body;
-            const novaCompra = await Compra.create(body);
-            res.status(201).json({ message: "Compra criada com sucesso", compra: novaCompra });
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao cadastrar compra`});
-        }
-    }
+  static cadastrarCompra = asyncHandler(async (req, res) => {
+    const novaCompra = await compraService.criar(req.body);
+    res.status(201).json({
+      message: 'Compra criada com sucesso',
+      compra: novaCompra
+    });
+  });
 
-    static async buscarCompraPorId (req, res) {
-        try{
-            const id = req.params.id;
-            const compra = await Compra.findByPk(id);
-            
-            if (!compra) {
-                res.status(404).json({ message: "Compra não encontrada" });
-                return;
-            }
+  static buscarCompraPorId = asyncHandler(async (req, res) => {
+    const compra = await compraService.buscarPorId(req.params.id);
+    res.status(200).json(compra);
+  });
 
-            res.status(200).json(compra);
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao buscar compra`});
-        }
-    }
+  static atualizarCompra = asyncHandler(async (req, res) => {
+    const compraAtualizada = await compraService.atualizar(req.params.id, req.body);
+    res.status(200).json({
+      message: 'Compra atualizada com sucesso',
+      compra: compraAtualizada
+    });
+  });
 
-    static async atualizarCompra (req, res) {
-        try{
-            const id = req.params.id;
-            const body = req.body;
-
-            const [updated] = await Compra.update(body, {
-                where: { id_compra: id }
-            });
-
-            if (updated === 0) {
-                res.status(404).json({ message: "Compra não encontrada" });
-                return;
-            }
-
-            const compraAtualizada = await Compra.findByPk(id);
-            res.status(200).json({ message: "Compra atualizada com sucesso", compra: compraAtualizada });
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao atualizar compra`});
-        }
-    }
-
-    static async deletarCompra (req, res) {
-        try{
-            const id = req.params.id;
-            const deleted = await Compra.destroy({
-                where: { id_compra: id }
-            });
-
-            if (deleted === 0) {
-                res.status(404).json({ message: "Compra não encontrada" });
-                return;
-            }
-
-            res.status(200).json({ message: "Compra deletada com sucesso" });
-        }
-        catch(erro){
-            res.status(500).json({message: `${erro.message} - falha ao deletar compra`});
-        }
-    }
+  static deletarCompra = asyncHandler(async (req, res) => {
+    await compraService.deletar(req.params.id);
+    res.status(200).json({ message: 'Compra deletada com sucesso' });
+  });
 }
 
 export default CompraController;
